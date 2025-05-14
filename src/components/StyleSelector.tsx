@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart } from "lucide-react";
+import { Heart, Check } from "lucide-react";
 
 interface Style {
   id: string;
@@ -44,31 +44,40 @@ const StyleSelector = ({ selectedStyle, onStyleSelect }: StyleSelectorProps) => 
 
   return (
     <div className="w-full">
-      <h3 className="text-xl font-display font-bold mb-4 text-kawaii-text">选择纹身风格</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <h3 className="text-xl font-sketch font-bold mb-6 text-sketch-ink sketch-title">选择纹身风格</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {styles.map((style) => (
-          <Card 
+          <div 
             key={style.id}
-            className={`cursor-pointer transition-all hover:shadow-lg overflow-hidden rounded-2xl ${selectedStyle === style.id ? 'ring-4 ring-kawaii-pink ring-offset-2' : ''}`}
+            className={`cursor-pointer transition-all hover:translate-y-[-3px] border-2 border-sketch-ink bg-sketch-paper overflow-hidden ${
+              selectedStyle === style.id 
+                ? 'ring-2 ring-sketch-primary ring-offset-2' 
+                : ''
+            }`}
+            style={{
+              boxShadow: selectedStyle === style.id 
+                ? '4px 4px 0px 0px #F47C7C' 
+                : '4px 4px 0px 0px #393535'
+            }}
             onClick={() => onStyleSelect(style.id)}
           >
-            <div className="aspect-square relative overflow-hidden">
+            <div className="aspect-square relative overflow-hidden border-b-2 border-sketch-ink">
               <img 
                 src={style.image} 
                 alt={style.name} 
                 className="w-full h-full object-cover"
               />
               {selectedStyle === style.id && (
-                <div className="absolute top-2 right-2 w-6 h-6 bg-kawaii-pink rounded-full flex items-center justify-center animate-pulse-soft">
-                  <Heart width="16" height="16" className="text-white" fill="white" strokeWidth={3} />
+                <div className="absolute top-2 right-2 w-8 h-8 border-2 border-sketch-ink bg-sketch-primary flex items-center justify-center">
+                  <Check width="16" height="16" className="text-white" strokeWidth={3} />
                 </div>
               )}
             </div>
-            <CardContent className="p-3">
-              <h4 className="font-display font-medium text-kawaii-text">{style.name}</h4>
-              <p className="text-xs text-gray-500 mt-1">{style.description}</p>
-            </CardContent>
-          </Card>
+            <div className="p-3">
+              <h4 className="font-sketch font-bold text-sketch-ink">{style.name}</h4>
+              <p className="text-xs text-sketch-ink/80 font-handwriting mt-1">{style.description}</p>
+            </div>
+          </div>
         ))}
       </div>
     </div>

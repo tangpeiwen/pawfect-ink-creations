@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fredoka:wght@300;400;500;600;700&family=Architects+Daughter&family=Caveat:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,74 +7,74 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 45 30% 96%;
+    --foreground: 20 6% 22%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 45 30% 96%;
+    --card-foreground: 20 6% 22%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 45 30% 96%;
+    --popover-foreground: 20 6% 22%;
 
-    --primary: 335 85% 80%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 359 88% 72%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 269 75% 92%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 150 25% 56%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 46 100% 88%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 41 91% 75%;
+    --accent-foreground: 20 6% 22%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 20 6% 80%;
+    --input: 20 6% 80%;
+    --ring: 20 6% 22%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 45 30% 96%;
+    --sidebar-foreground: 20 6% 22%;
+    --sidebar-primary: 20 6% 22%;
+    --sidebar-primary-foreground: 45 30% 96%;
+    --sidebar-accent: 41 91% 75%;
+    --sidebar-accent-foreground: 20 6% 22%;
+    --sidebar-border: 20 6% 80%;
+    --sidebar-ring: 359 88% 72%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 20 6% 12%;
+    --foreground: 45 30% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 20 6% 12%;
+    --card-foreground: 45 30% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 20 6% 12%;
+    --popover-foreground: 45 30% 96%;
 
-    --primary: 335 85% 80%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 359 88% 72%;
+    --primary-foreground: 20 6% 12%;
 
-    --secondary: 269 75% 92%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 150 25% 56%;
+    --secondary-foreground: 20 6% 12%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 20 6% 20%;
+    --muted-foreground: 20 6% 60%;
 
-    --accent: 46 100% 88%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 41 91% 75%;
+    --accent-foreground: 20 6% 12%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 20 6% 40%;
+    --input: 20 6% 40%;
+    --ring: 45 30% 96%;
   }
 }
 
@@ -84,50 +84,117 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Nunito', sans-serif;
+    @apply bg-sketch-paper text-sketch-ink;
+    font-family: 'Caveat', cursive;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23aaaaaa' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+    @apply font-sketch;
   }
 }
 
-/* Kawaii styles */
-.kawaii-container {
-  @apply relative overflow-hidden rounded-3xl border-2 border-kawaii-pink/30 shadow-md bg-white;
+/* Hand-drawn styles */
+.sketch-container {
+  @apply relative overflow-hidden rounded-none border-2 border-sketch-ink bg-sketch-paper;
+  box-shadow: 4px 4px 0px 0px theme('colors.sketch.ink');
+  position: relative;
 }
 
-.kawaii-button {
-  @apply relative px-8 py-3 font-display font-bold text-lg rounded-full bg-white text-kawaii-pink 
-    shadow-md hover:shadow-lg hover:translate-y-[-3px] transition-all duration-200;
+.sketch-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23aaaaaa' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E");
+  z-index: -1;
 }
 
-.kawaii-button-primary {
-  @apply bg-kawaii-pink text-white kawaii-button;
+.sketch-button {
+  @apply relative px-6 py-2 font-sketch font-bold text-lg bg-sketch-paper text-sketch-ink 
+    border-2 border-sketch-ink transition-all duration-200;
+  box-shadow: 3px 3px 0px 0px theme('colors.sketch.ink');
 }
 
-.kawaii-button-secondary {
-  @apply bg-kawaii-purple text-kawaii-text kawaii-button;
+.sketch-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px 0px theme('colors.sketch.ink');
 }
 
-.kawaii-card {
-  @apply relative overflow-hidden rounded-3xl border-2 border-kawaii-pink/20 p-6 bg-white shadow-md;
+.sketch-button:active {
+  transform: translate(0px, 0px);
+  box-shadow: 1px 1px 0px 0px theme('colors.sketch.ink');
 }
 
-.kawaii-input {
-  @apply border-2 border-kawaii-purple/50 rounded-full p-3 w-full focus:outline-none focus:ring-2 focus:ring-kawaii-pink focus:border-transparent;
+.sketch-button-primary {
+  @apply bg-sketch-primary text-white sketch-button;
 }
 
-.kawaii-title {
-  @apply font-display font-bold text-kawaii-text;
+.sketch-button-secondary {
+  @apply bg-sketch-secondary text-white sketch-button;
 }
 
-.kawaii-tag {
-  @apply inline-block px-4 py-1 bg-kawaii-pink text-white font-bold rounded-full;
+.sketch-button-accent {
+  @apply bg-sketch-accent text-sketch-ink sketch-button;
 }
 
-/* 猫咪背景 */
+.sketch-card {
+  @apply relative overflow-hidden rounded-none border-2 border-sketch-ink p-6 bg-sketch-paper;
+  box-shadow: 4px 4px 0px 0px theme('colors.sketch.ink');
+}
+
+.sketch-input {
+  @apply border-2 border-sketch-ink rounded-none p-3 w-full bg-sketch-paper
+    focus:outline-none focus:ring-2 focus:ring-sketch-ink focus:border-sketch-ink;
+  box-shadow: 2px 2px 0px 0px theme('colors.sketch.ink');
+}
+
+.sketch-title {
+  @apply font-sketch font-bold text-sketch-ink;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-style: wavy;
+  text-underline-offset: 6px;
+  text-decoration-color: theme('colors.sketch.primary');
+}
+
+.sketch-tag {
+  @apply inline-block px-4 py-1 bg-sketch-accent font-sketch font-bold rounded-none border-2 border-sketch-ink text-sketch-ink;
+  box-shadow: 2px 2px 0px 0px theme('colors.sketch.ink');
+}
+
+/* Hand-drawn decoration */
+.sketch-decoration {
+  @apply absolute pointer-events-none;
+  z-index: -1;
+}
+
+/* Dotted background */
+.dotted-bg {
+  background-image: radial-gradient(circle, theme('colors.sketch.ink') 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.07;
+}
+
+/* Decorative elements */
+.sketch-star {
+  @apply text-sketch-accent absolute;
+  filter: drop-shadow(1px 1px 0 theme('colors.sketch.ink'));
+}
+
+.sketch-line {
+  stroke: theme('colors.sketch.ink');
+  stroke-width: 2;
+  stroke-linecap: round;
+  fill: none;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-line 2s ease-in-out forwards;
+}
+
+/* Cat background */
 .cat-background {
   position: absolute;
   top: 0;
@@ -138,70 +205,67 @@
   z-index: -1;
 }
 
-/* 卡通风格的宠物卡片 */
-.pet-card {
-  @apply relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-lg;
+.cat-outline {
+  opacity: 0.15;
+  filter: url('#sketch-filter'); /* Add hand-drawn filter effect */
 }
 
-.pet-card::before {
-  content: '';
-  @apply absolute inset-0 bg-gradient-to-r from-kawaii-pink/10 to-kawaii-purple/10 opacity-80 transition-all duration-300;
-  z-index: -1;
-}
-
-.pet-button {
-  @apply relative overflow-hidden bg-kawaii-pink hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-display font-bold rounded-full;
-}
-
-/* 特性卡片 */
+/* Feature card */
 .feature-card {
-  @apply transition-all duration-300 border-2 border-kawaii-purple/20 rounded-3xl bg-white shadow-md hover:shadow-lg;
+  @apply transition-all duration-300 border-2 border-sketch-ink bg-sketch-paper relative;
+  box-shadow: 4px 4px 0px 0px theme('colors.sketch.ink');
 }
 
 .feature-card:hover {
-  @apply -translate-y-1;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px theme('colors.sketch.ink');
 }
 
-/* 动画 */
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(var(--rotation, 0deg)); }
-  50% { transform: translateY(-10px) rotate(var(--rotation, 0deg)); }
+/* Pet card */
+.pet-card {
+  @apply relative overflow-hidden border-2 border-sketch-ink transition-all duration-300;
+  box-shadow: 3px 3px 0px 0px theme('colors.sketch.ink');
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.pet-button {
+  @apply relative bg-sketch-primary hover:bg-sketch-primary/90 text-white font-sketch font-bold 
+    border-2 border-sketch-ink transition-all duration-200;
+  box-shadow: 3px 3px 0px 0px theme('colors.sketch.ink');
 }
 
-@keyframes bounce-small {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+.pet-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px 0px theme('colors.sketch.ink');
 }
 
-.animate-bounce-small {
-  animation: bounce-small 2s ease-in-out infinite;
+/* Animations */
+@keyframes draw-line {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
 }
 
-@keyframes pulse-soft {
-  0%, 100% { opacity: 0.8; filter: brightness(1); }
-  50% { opacity: 1; filter: brightness(1.2); }
+@keyframes sketch-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.animate-pulse-soft {
-  animation: pulse-soft 4s ease-in-out infinite;
+.animate-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-line 2s ease-in-out forwards;
 }
 
-/* 装饰元素 */
-.kawaii-decoration {
-  @apply absolute pointer-events-none opacity-50;
+.animate-sketch-appear {
+  opacity: 0;
+  animation: sketch-appear 0.6s ease-out forwards;
 }
-
-/* 可爱气泡 */
-.kawaii-bubble {
-  @apply bg-kawaii-blue/30 rounded-full absolute;
-}
-
-/* 星星装饰 */
-.kawaii-star {
-  @apply text-kawaii-yellow absolute animate-pulse-soft;
-}
-
