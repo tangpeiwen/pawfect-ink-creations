@@ -45,8 +45,8 @@ const Hero = () => (
       <div className="flex flex-col md:flex-row md:items-center gap-12">
         <div className="flex-1 md:pr-8 neo-container p-8 bg-white">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold mb-6 text-black">
-            将您的<span className="text-pet-pink neo-outline">宠物</span><br />
-            <span className="neo-gradient text-transparent bg-clip-text">变成独特的纹身贴</span>
+            将您的<span className="text-neobrutalism-pink">宠物</span><br />
+            <span className="text-neobrutalism-blue">变成独特的纹身贴</span>
           </h1>
           <p className="text-xl md:text-2xl text-black mb-10 max-w-xl border-l-4 border-black pl-4">
             上传您爱宠的照片，我们的AI将为您生成独一无二的纹身贴设计，简单、快速、安全、有趣！
@@ -67,7 +67,7 @@ const Hero = () => (
           <div className="mt-12 flex items-center space-x-2">
             <div className="flex -space-x-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-gradient-pet border-2 border-black"></div>
+                <div key={i} className="w-10 h-10 rounded-full bg-neobrutalism-pink border-2 border-black"></div>
               ))}
             </div>
             <p className="text-sm text-black">
@@ -84,14 +84,14 @@ const Hero = () => (
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-pet-yellow border-4 border-black rotate-6 animate-float">
+            <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-neobrutalism-yellow border-4 border-black rotate-6 animate-float">
               <img
                 src="/placeholder.svg"
                 alt="纹身贴样品"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -top-8 -right-8 w-32 h-32 bg-pet-pink border-4 border-black -rotate-12 animate-float" style={{ animationDelay: "1s" }}>
+            <div className="absolute -top-8 -right-8 w-32 h-32 bg-neobrutalism-pink border-4 border-black -rotate-12 animate-float" style={{ animationDelay: "1s" }}>
               <img
                 src="/placeholder.svg"
                 alt="纹身贴样品"
@@ -128,9 +128,9 @@ const Features = () => {
   return (
     <section className="py-16 relative">
       <div className="container px-6 mx-auto">
-        <div className="text-center mb-16 neo-container p-8 bg-pet-yellow">
+        <div className="text-center mb-16 neo-container p-8 bg-neobrutalism-yellow">
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-black">
-            简单三步，制作属于您的<span className="text-pet-pink">宠物纹身贴</span>
+            简单三步，制作属于您的<span className="text-neobrutalism-pink">宠物纹身贴</span>
           </h2>
           <p className="text-xl text-black max-w-2xl mx-auto">
             我们的AI系统能够将您上传的宠物照片转换为精美的纹身贴设计，操作简单，过程有趣
