@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 330 100% 70%;
+    --primary: 340 95% 60%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -35,7 +35,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 1rem;
+    --radius: 0.25rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -57,7 +57,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 330 100% 70%;
+    --primary: 340 95% 60%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -93,104 +93,39 @@
   }
 }
 
-/* 卡通风格的宠物卡片 */
-.pet-card {
-  @apply relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-lg;
+/* Neo-brutalist styles */
+.neo-container {
+  @apply relative overflow-hidden border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
 }
 
-.pet-card::before {
-  content: '';
-  @apply absolute inset-0 bg-gradient-pet opacity-80 transition-all duration-300;
-  z-index: -1;
+.neo-button {
+  @apply relative px-8 py-3 font-display font-bold text-lg border-4 border-black bg-white text-black 
+    shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+    hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-200;
 }
 
-.pet-button {
-  @apply relative overflow-hidden bg-gradient-pet hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-display font-bold rounded-full;
+.neo-button-primary {
+  @apply bg-pet-pink text-white neo-button;
 }
 
-/* Neon 风格 */
-.dark-theme {
-  background-color: #121212;
-  color: #ffffff;
+.neo-button-secondary {
+  @apply bg-pet-yellow text-black neo-button;
 }
 
-.neon-background {
-  position: relative;
-  background-color: #121212;
-  overflow: hidden;
-  min-height: 100vh;
+.neo-card {
+  @apply relative overflow-hidden border-4 border-black p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
 }
 
-.neon-text {
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(255,255,255,0.8), 
-               0 0 20px rgba(255,255,255,0.5),
-               0 0 30px rgba(255,113,154,0.7);
+.neo-input {
+  @apply border-4 border-black p-3 w-full focus:outline-none focus:ring-0 focus:border-black;
 }
 
-.neon-gradient {
-  background: linear-gradient(to right, #FF719A, #FFA99F, #FFE29F);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 10px rgba(255,113,154,0.7));
+.neo-title {
+  @apply font-display font-bold text-black;
 }
 
-.neon-gradient-bg {
-  background: linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%);
-  box-shadow: 0 0 15px rgba(255,113,154,0.7),
-              0 0 30px rgba(255,113,154,0.4);
-}
-
-.neon-button {
-  background: linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%);
-  color: #ffffff;
-  font-weight: bold;
-  border-radius: 9999px;
-  box-shadow: 0 0 10px rgba(255,113,154,0.7),
-              0 0 20px rgba(255,113,154,0.4);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.neon-button:hover {
-  box-shadow: 0 0 20px rgba(255,113,154,0.9),
-              0 0 40px rgba(255,113,154,0.6);
-  transform: scale(1.05);
-}
-
-.neon-outline-button {
-  background: transparent;
-  color: #ffffff;
-  border: 2px solid rgba(255,113,154,0.7);
-  border-radius: 9999px;
-  box-shadow: 0 0 10px rgba(255,113,154,0.5),
-              inset 0 0 10px rgba(255,113,154,0.3);
-  transition: all 0.3s ease;
-}
-
-.neon-outline-button:hover {
-  border-color: #FF719A;
-  box-shadow: 0 0 15px rgba(255,113,154,0.7),
-              inset 0 0 15px rgba(255,113,154,0.5);
-  background: rgba(255,113,154,0.1);
-}
-
-.shadow-neon {
-  box-shadow: 0 0 15px rgba(255,113,154,0.5);
-}
-
-.shadow-neon-lg {
-  box-shadow: 0 0 25px rgba(255,113,154,0.7);
-}
-
-.glow-pink {
-  filter: drop-shadow(0 0 8px rgba(255,113,154,0.9));
-}
-
-.glow-peach {
-  filter: drop-shadow(0 0 8px rgba(255,169,159,0.9));
+.neo-tag {
+  @apply inline-block px-4 py-1 bg-pet-pink text-white font-bold border-2 border-black;
 }
 
 /* 猫咪背景 */
@@ -204,14 +139,28 @@
   z-index: -1;
 }
 
+/* 卡通风格的宠物卡片 */
+.pet-card {
+  @apply relative overflow-hidden rounded-sm transition-all duration-300 hover:shadow-lg;
+}
+
+.pet-card::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-pet opacity-80 transition-all duration-300;
+  z-index: -1;
+}
+
+.pet-button {
+  @apply relative overflow-hidden bg-gradient-pet hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-display font-bold;
+}
+
 /* 特性卡片 */
 .feature-card {
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  @apply transition-all duration-300 border-4 border-black bg-white;
 }
 
 .feature-card:hover {
-  transform: translateY(-8px);
+  @apply shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] -translate-y-1 -translate-x-1;
 }
 
 /* 动画 */
@@ -231,4 +180,17 @@
 
 .animate-pulse-soft {
   animation: pulse-soft 4s ease-in-out infinite;
+}
+
+/* 高对比度和醒目的颜色组合 */
+.neo-gradient {
+  @apply bg-gradient-to-r from-pet-pink via-pet-peach to-pet-yellow;
+}
+
+.neo-outline {
+  text-shadow: 
+    -1px -1px 0 #000,  
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
 }

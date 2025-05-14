@@ -26,7 +26,7 @@ const CatBackground = () => {
             position: 'absolute',
             top: `${Math.random() * 80}%`,
             left: `${Math.random() * 80}%`,
-            width: `${100 + Math.random() * 150}px`,
+            width: `${70 + Math.random() * 100}px`,
             opacity: 0.15,
             transform: `rotate(${Math.random() * 360}deg)`,
             zIndex: -1
@@ -40,69 +40,63 @@ const CatBackground = () => {
 };
 
 const Hero = () => (
-  <section className="relative py-24 md:py-32 overflow-hidden">
+  <section className="relative py-20 md:py-24 overflow-hidden">
     <div className="container px-6 mx-auto relative z-10">
-      <div className="flex flex-col md:flex-row md:items-center">
-        <div className="flex-1 md:pr-8">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold mb-6 neon-text">
-            将您的<span className="text-pet-peach">宠物</span><br />
-            <span className="neon-gradient">变成独特的纹身贴</span>
+      <div className="flex flex-col md:flex-row md:items-center gap-12">
+        <div className="flex-1 md:pr-8 neo-container p-8 bg-white">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold mb-6 text-black">
+            将您的<span className="text-pet-pink neo-outline">宠物</span><br />
+            <span className="neo-gradient text-transparent bg-clip-text">变成独特的纹身贴</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-xl">
+          <p className="text-xl md:text-2xl text-black mb-10 max-w-xl border-l-4 border-black pl-4">
             上传您爱宠的照片，我们的AI将为您生成独一无二的纹身贴设计，简单、快速、安全、有趣！
           </p>
           <div className="flex flex-col sm:flex-row gap-6">
             <Link to="/create">
-              <Button className="neon-button px-8 py-6 text-lg">
+              <button className="neo-button-primary">
                 开始制作
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                <ArrowRight className="ml-2 h-5 w-5 inline" />
+              </button>
             </Link>
             <Link to="/gallery">
-              <Button variant="outline" className="neon-outline-button px-8 py-6 text-lg border-2">
+              <button className="neo-button-secondary">
                 浏览作品集
-              </Button>
+              </button>
             </Link>
           </div>
           <div className="mt-12 flex items-center space-x-2">
             <div className="flex -space-x-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-gradient-neon border-2 border-white"></div>
+                <div key={i} className="w-10 h-10 rounded-full bg-gradient-pet border-2 border-black"></div>
               ))}
             </div>
-            <p className="text-sm text-gray-300">
-              <span className="font-bold text-white">1000+</span> 位用户已体验
+            <p className="text-sm text-black">
+              <span className="font-bold text-black">1000+</span> 位用户已体验
             </p>
           </div>
         </div>
-        <div className="flex-1 mt-12 md:mt-0 relative">
-          <div className="relative w-full aspect-square max-w-md mx-auto">
-            <div className="w-full h-full rounded-[2.5rem] overflow-hidden shadow-neon border-4 border-white/30 backdrop-blur-sm bg-black/30">
+        <div className="flex-1 relative">
+          <div className="relative w-full aspect-square max-w-md mx-auto neo-container bg-white p-4">
+            <div className="w-full h-full overflow-hidden border-4 border-black">
               <img
                 src="/placeholder.svg"
                 alt="宠物纹身贴示例"
-                className="w-full h-full object-cover opacity-80"
+                className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-pet-yellow/30 rounded-2xl rotate-6 shadow-neon animate-float border-4 border-white/20 backdrop-blur-sm">
+            <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-pet-yellow border-4 border-black rotate-6 animate-float">
               <img
                 src="/placeholder.svg"
                 alt="纹身贴样品"
-                className="w-full h-full object-cover rounded-xl opacity-80"
+                className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -top-8 -right-8 w-32 h-32 bg-pet-peach/30 rounded-2xl -rotate-12 shadow-neon animate-float border-4 border-white/20 backdrop-blur-sm" style={{ animationDelay: "1s" }}>
+            <div className="absolute -top-8 -right-8 w-32 h-32 bg-pet-pink border-4 border-black -rotate-12 animate-float" style={{ animationDelay: "1s" }}>
               <img
                 src="/placeholder.svg"
                 alt="纹身贴样品"
-                className="w-full h-full object-cover rounded-xl opacity-80"
+                className="w-full h-full object-cover"
               />
-            </div>
-            <div className="absolute bottom-1/3 right-0 transform translate-x-1/2">
-              <Heart className="w-12 h-12 text-pet-pink fill-pet-pink glow-pink animate-pulse" style={{ animationDelay: "1.5s" }} />
-            </div>
-            <div className="absolute top-1/3 left-0 transform -translate-x-1/2">
-              <PawPrint className="w-10 h-10 text-pet-peach fill-pet-peach glow-peach animate-pulse-soft" />
             </div>
           </div>
         </div>
@@ -134,11 +128,11 @@ const Features = () => {
   return (
     <section className="py-16 relative">
       <div className="container px-6 mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 neon-text">
-            简单三步，制作属于您的<span className="neon-gradient">宠物纹身贴</span>
+        <div className="text-center mb-16 neo-container p-8 bg-pet-yellow">
+          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-black">
+            简单三步，制作属于您的<span className="text-pet-pink">宠物纹身贴</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-black max-w-2xl mx-auto">
             我们的AI系统能够将您上传的宠物照片转换为精美的纹身贴设计，操作简单，过程有趣
           </p>
         </div>
@@ -147,23 +141,23 @@ const Features = () => {
           {features.map((feature, index) => (
             <div 
               key={index} 
-              className="bg-black/30 backdrop-blur-sm p-8 rounded-[2rem] shadow-neon hover:shadow-neon-lg transition-all border-2 border-white/20 transform hover:-translate-y-2 feature-card"
+              className="feature-card p-8"
             >
-              <div className="w-16 h-16 neon-gradient-bg rounded-full flex items-center justify-center text-white mb-6">
+              <div className="w-16 h-16 border-4 border-black bg-white rounded-full flex items-center justify-center text-black mb-6">
                 {feature.icon}
               </div>
-              <h3 className="text-2xl font-display font-bold mb-4 text-white">{feature.title}</h3>
-              <p className="text-gray-300">{feature.description}</p>
+              <h3 className="text-2xl font-display font-bold mb-4 text-black">{feature.title}</h3>
+              <p className="text-black">{feature.description}</p>
             </div>
           ))}
         </div>
         
         <div className="text-center mt-16">
           <Link to="/create">
-            <Button className="neon-button px-10 py-6 text-xl">
+            <button className="neo-button-primary">
               立即开始设计
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+              <ArrowRight className="ml-2 h-5 w-5 inline" />
+            </button>
           </Link>
         </div>
       </div>
@@ -172,16 +166,9 @@ const Features = () => {
 };
 
 const Index = () => {
-  useEffect(() => {
-    document.body.classList.add('dark-theme');
-    return () => {
-      document.body.classList.remove('dark-theme');
-    };
-  }, []);
-
   return (
     <Layout>
-      <div className="neon-background">
+      <div className="bg-white">
         <Hero />
         <Features />
       </div>

@@ -1,5 +1,4 @@
 
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -64,13 +63,21 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Custom pet-themed colors
+				// Neo-brutalist theme colors
 				pet: {
-					pink: '#FF719A',
+					pink: '#FF405C',
 					peach: '#FFA99F',
-					yellow: '#FFE29F',
+					yellow: '#FFDE59',
 					purple: '#E5DEFF',
 					blue: '#D3E4FD',
+				},
+				neobrutalism: {
+					black: '#000000',
+					white: '#FFFFFF',
+					yellow: '#FFDE59',
+					pink: '#FF405C',
+					blue: '#4F7CFF',
+					green: '#00CC99',
 				}
 			},
 			fontFamily: {
@@ -115,10 +122,9 @@ export default {
 				'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
 			},
 			backgroundImage: {
-				'gradient-pet': 'linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)',
+				'gradient-pet': 'linear-gradient(225deg, #FFDE59 0%, #FFA99F 48%, #FF405C 100%)',
 			}
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
-
