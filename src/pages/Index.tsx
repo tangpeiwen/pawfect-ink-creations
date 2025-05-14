@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
@@ -6,28 +5,8 @@ import { ArrowRight, Cat, PawPrint, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
-const PawPrints = () => {
-  return (
-    <div className="absolute w-full h-full pointer-events-none overflow-hidden">
-      <div className="paw-print absolute top-12 left-[10%] animate-float">
-        <PawPrint className="h-8 w-8 text-pet-pink rotate-[-30deg]" />
-      </div>
-      <div className="paw-print absolute top-24 right-[15%] animate-float animation-delay-300">
-        <PawPrint className="h-10 w-10 text-black rotate-[15deg]" />
-      </div>
-      <div className="paw-print absolute bottom-16 left-[30%] animate-float animation-delay-600">
-        <PawPrint className="h-6 w-6 text-pet-pink rotate-[45deg]" />
-      </div>
-      <div className="paw-print absolute bottom-32 right-[25%] animate-float animation-delay-900">
-        <PawPrint className="h-7 w-7 text-black rotate-[-15deg]" />
-      </div>
-    </div>
-  );
-};
-
 const Hero = () => (
-  <section className="py-16 md:py-20 bg-pet-pink relative overflow-hidden">
-    <PawPrints />
+  <section className="py-16 md:py-20 relative overflow-hidden">
     <div className="container px-6 mx-auto">
       <div className="bg-white rounded-[2rem] border-[6px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden relative">
         <div className="grid md:grid-cols-2 gap-8">
@@ -38,7 +17,7 @@ const Hero = () => (
             <p className="text-lg md:text-xl text-gray-700 mb-10">
               上传照片，选择风格，几分钟内获得专属您爱宠的纹身贴设计，轻松纪念与宠物的美好时光
             </p>
-            <div className="animate-pulse-soft">
+            <div>
               <Link to="/create">
                 <Button className="bg-pet-pink hover:bg-pet-pink/90 text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
                   立即开始设计
@@ -49,30 +28,17 @@ const Hero = () => (
           </div>
           <div className="relative md:block hidden">
             <div className="absolute inset-0 p-8 md:p-12">
-              <div className="h-full w-full border-[6px] border-black rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform rotate-3 hover:rotate-0 transition-all duration-300">
+              <div className="h-full w-full border-[6px] border-black rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-gray-100 flex items-center justify-center">
                 <AspectRatio ratio={3/4} className="h-full">
-                  <img 
-                    src="/lovable-uploads/32f5a35e-1cbc-4cff-aa37-735d75b2c558.png" 
-                    alt="Cute cat" 
-                    className="object-cover h-full w-full"
-                  />
+                  <div className="flex items-center justify-center h-full w-full">
+                    <PawPrint className="h-24 w-24 text-pet-pink" />
+                  </div>
                 </AspectRatio>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    {/* Decorative elements */}
-    <div className="absolute bottom-0 right-0 md:block hidden">
-      <Cat className="h-24 w-24 text-black animate-bounce-slow" />
-    </div>
-    <div className="absolute top-40 left-10 md:block hidden">
-      <div className="h-12 w-12 bg-pet-yellow border-[3px] border-black rounded-full animate-float"></div>
-    </div>
-    <div className="absolute bottom-20 left-1/4 md:block hidden">
-      <div className="h-16 w-16 bg-white border-[3px] border-black rounded-full animate-float animation-delay-500"></div>
     </div>
   </section>
 );

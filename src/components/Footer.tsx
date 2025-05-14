@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { PawPrint, Heart } from "lucide-react";
 
@@ -9,10 +8,10 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-pet rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-pet-pink rounded-full flex items-center justify-center">
                 <PawPrint className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-display font-bold bg-clip-text text-transparent bg-gradient-pet">萌宠纹身</span>
+              <span className="text-xl font-display font-bold text-pet-pink">萌宠纹身</span>
             </Link>
             <p className="mt-4 text-gray-500 text-sm">
               让您的宠物变成可爱的纹身贴，<br />

@@ -11,11 +11,11 @@ const Header = () => {
     <header className="bg-white py-4 shadow-sm">
       <div className="container flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="w-12 h-12 bg-gradient-pet rounded-full flex items-center justify-center animate-pulse-soft">
+          <div className="w-12 h-12 bg-pet-pink rounded-full flex items-center justify-center">
             <PawPrint className="w-7 h-7 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xl md:text-2xl font-display font-bold bg-clip-text text-transparent bg-gradient-pet">萌宠纹身</span>
+            <span className="text-xl md:text-2xl font-display font-bold text-pet-pink">萌宠纹身</span>
             <span className="text-xs text-gray-400 -mt-1">Pet Tattoo</span>
           </div>
         </Link>
@@ -27,7 +27,7 @@ const Header = () => {
           <Link to="/pricing" className="font-medium hover:text-pet-pink transition-colors">价格套餐</Link>
           <Link to="/about" className="font-medium hover:text-pet-pink transition-colors">关于我们</Link>
           <Link to="/create">
-            <Button className="pet-button px-6 py-2 rounded-full">
+            <Button className="bg-pet-pink text-white px-6 py-2 rounded-full hover:bg-pet-pink/90">
               <Cat className="w-5 h-5 mr-1" />
               开始制作
             </Button>
@@ -56,7 +56,7 @@ const Header = () => {
             <Link to="/pricing" className="font-medium hover:text-pet-pink transition-colors p-2">价格套餐</Link>
             <Link to="/about" className="font-medium hover:text-pet-pink transition-colors p-2">关于我们</Link>
             <Link to="/create">
-              <Button className="pet-button px-6 py-2 w-full rounded-full">
+              <Button className="bg-pet-pink text-white px-6 py-2 w-full rounded-full hover:bg-pet-pink/90">
                 <Cat className="w-5 h-5 mr-1" />
                 开始制作
               </Button>
