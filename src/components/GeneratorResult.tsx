@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowClockwise, Check } from "lucide-react";
+import { RefreshCw, Check } from "lucide-react";
 
 interface GeneratorResultProps {
   loading: boolean;
@@ -53,7 +52,7 @@ const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: Gene
                   className="sketch-button"
                   onClick={onRegenerate}
                 >
-                  <ArrowClockwise className="mr-2 h-5 w-5" />
+                  <RefreshCw className="mr-2 h-5 w-5" />
                   重新生成
                 </Button>
                 <Button 
