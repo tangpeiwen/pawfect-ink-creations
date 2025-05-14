@@ -1,29 +1,78 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { ArrowRight, Cat, PawPrint, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+
+const PawPrints = () => {
+  return (
+    <div className="absolute w-full h-full pointer-events-none overflow-hidden">
+      <div className="paw-print absolute top-12 left-[10%] animate-float">
+        <PawPrint className="h-8 w-8 text-pet-pink rotate-[-30deg]" />
+      </div>
+      <div className="paw-print absolute top-24 right-[15%] animate-float animation-delay-300">
+        <PawPrint className="h-10 w-10 text-black rotate-[15deg]" />
+      </div>
+      <div className="paw-print absolute bottom-16 left-[30%] animate-float animation-delay-600">
+        <PawPrint className="h-6 w-6 text-pet-pink rotate-[45deg]" />
+      </div>
+      <div className="paw-print absolute bottom-32 right-[25%] animate-float animation-delay-900">
+        <PawPrint className="h-7 w-7 text-black rotate-[-15deg]" />
+      </div>
+    </div>
+  );
+};
 
 const Hero = () => (
-  <section className="py-16 md:py-20 bg-gradient-to-b from-pet-pink/30 to-pet-yellow/30">
+  <section className="py-16 md:py-20 bg-pet-pink relative overflow-hidden">
+    <PawPrints />
     <div className="container px-6 mx-auto">
-      <div className="bg-gradient-pet rounded-[2rem] border-[6px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-        <div className="p-8 md:p-16 text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 text-white drop-shadow-md">
-            让您的宠物永远和您在一起
-          </h1>
-          <p className="text-lg md:text-xl text-white mb-10 max-w-3xl mx-auto">
-            上传照片，选择风格，几分钟内获得专属您爱宠的纹身贴设计，轻松纪念与宠物的美好时光
-          </p>
-          <Link to="/create">
-            <Button className="bg-white hover:bg-white/90 text-pet-pink font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
-              立即开始设计
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+      <div className="bg-white rounded-[2rem] border-[6px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden relative">
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="p-8 md:p-12 flex flex-col justify-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 text-black">
+              让您的宠物永远和您在一起
+            </h1>
+            <p className="text-lg md:text-xl text-gray-700 mb-10">
+              上传照片，选择风格，几分钟内获得专属您爱宠的纹身贴设计，轻松纪念与宠物的美好时光
+            </p>
+            <div className="animate-pulse-soft">
+              <Link to="/create">
+                <Button className="bg-pet-pink hover:bg-pet-pink/90 text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
+                  立即开始设计
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <div className="relative md:block hidden">
+            <div className="absolute inset-0 p-8 md:p-12">
+              <div className="h-full w-full border-[6px] border-black rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform rotate-3 hover:rotate-0 transition-all duration-300">
+                <AspectRatio ratio={3/4} className="h-full">
+                  <img 
+                    src="/lovable-uploads/32f5a35e-1cbc-4cff-aa37-735d75b2c558.png" 
+                    alt="Cute cat" 
+                    className="object-cover h-full w-full"
+                  />
+                </AspectRatio>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+    
+    {/* Decorative elements */}
+    <div className="absolute bottom-0 right-0 md:block hidden">
+      <Cat className="h-24 w-24 text-black animate-bounce-slow" />
+    </div>
+    <div className="absolute top-40 left-10 md:block hidden">
+      <div className="h-12 w-12 bg-pet-yellow border-[3px] border-black rounded-full animate-float"></div>
+    </div>
+    <div className="absolute bottom-20 left-1/4 md:block hidden">
+      <div className="h-16 w-16 bg-white border-[3px] border-black rounded-full animate-float animation-delay-500"></div>
     </div>
   </section>
 );
@@ -89,6 +138,29 @@ const Features = () => {
 };
 
 const Index = () => {
+  // Add animation delay utility
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .animation-delay-300 { animation-delay: 300ms; }
+      .animation-delay-500 { animation-delay: 500ms; }
+      .animation-delay-600 { animation-delay: 600ms; }
+      .animation-delay-900 { animation-delay: 900ms; }
+      .animate-bounce-slow {
+        animation: bounce 3s infinite;
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <Layout>
       <Hero />
