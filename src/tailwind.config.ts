@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -70,11 +71,21 @@ export default {
 					pink: '#FF405C',
 					blue: '#4F7CFF',
 					green: '#00CC99',
+				},
+				// Kawaii theme colors
+				kawaii: {
+					pink: '#FFB7D0',
+					purple: '#E5DEFF',
+					blue: '#D3E4FD',
+					yellow: '#FEF7CD',
+					green: '#F2FCE2',
+					peach: '#FDE1D3',
+					text: '#6E6A8A',
 				}
 			},
 			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
-				display: ['Fredoka', 'sans-serif'],
+				sans: ['Nunito', 'sans-serif'],
+				display: ['Quicksand', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -102,19 +113,29 @@ export default {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-10px)' },
 				},
+				'bounce-small': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' },
+				},
 				'pulse-soft': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.8' },
+				},
+				'wiggle': {
+					'0%, 100%': { transform: 'rotate(-3deg)' },
+					'50%': { transform: 'rotate(3deg)' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite',
+				'bounce-small': 'bounce-small 2s ease-in-out infinite',
 				'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
+				'wiggle': 'wiggle 2s ease-in-out infinite',
 			},
 			backgroundImage: {
-				'gradient-pet': 'linear-gradient(225deg, #FFDE59 0%, #FFA99F 48%, #FF405C 100%)',
+				'gradient-kawaii': 'linear-gradient(225deg, #FFB7D0 0%, #E5DEFF 48%, #D3E4FD 100%)',
 			}
 		}
 	},

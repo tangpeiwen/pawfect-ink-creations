@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fredoka:wght@300;400;500;600;700&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,16 +16,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 340 95% 60%;
+    --primary: 335 85% 80%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 269 75% 92%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 58 100% 81%;
+    --accent: 46 100% 88%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -34,7 +35,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.25rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -56,16 +57,16 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 340 95% 60%;
+    --primary: 335 85% 80%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 269 75% 92%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 58 100% 81%;
+    --accent: 46 100% 88%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 62.8% 30.6%;
@@ -84,7 +85,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Nunito', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -92,39 +93,38 @@
   }
 }
 
-/* Neo-brutalist styles */
-.neo-container {
-  @apply relative overflow-hidden border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
+/* Kawaii styles */
+.kawaii-container {
+  @apply relative overflow-hidden rounded-3xl border-2 border-kawaii-pink/30 shadow-md bg-white;
 }
 
-.neo-button {
-  @apply relative px-8 py-3 font-display font-bold text-lg border-4 border-black bg-white text-black 
-    shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-    hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-200;
+.kawaii-button {
+  @apply relative px-8 py-3 font-display font-bold text-lg rounded-full bg-white text-kawaii-pink 
+    shadow-md hover:shadow-lg hover:translate-y-[-3px] transition-all duration-200;
 }
 
-.neo-button-primary {
-  @apply bg-neobrutalism-pink text-white neo-button;
+.kawaii-button-primary {
+  @apply bg-kawaii-pink text-white kawaii-button;
 }
 
-.neo-button-secondary {
-  @apply bg-neobrutalism-yellow text-black neo-button;
+.kawaii-button-secondary {
+  @apply bg-kawaii-purple text-kawaii-text kawaii-button;
 }
 
-.neo-card {
-  @apply relative overflow-hidden border-4 border-black p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
+.kawaii-card {
+  @apply relative overflow-hidden rounded-3xl border-2 border-kawaii-pink/20 p-6 bg-white shadow-md;
 }
 
-.neo-input {
-  @apply border-4 border-black p-3 w-full focus:outline-none focus:ring-0 focus:border-black;
+.kawaii-input {
+  @apply border-2 border-kawaii-purple/50 rounded-full p-3 w-full focus:outline-none focus:ring-2 focus:ring-kawaii-pink focus:border-transparent;
 }
 
-.neo-title {
-  @apply font-display font-bold text-black;
+.kawaii-title {
+  @apply font-display font-bold text-kawaii-text;
 }
 
-.neo-tag {
-  @apply inline-block px-4 py-1 bg-neobrutalism-pink text-white font-bold border-2 border-black;
+.kawaii-tag {
+  @apply inline-block px-4 py-1 bg-kawaii-pink text-white font-bold rounded-full;
 }
 
 /* 猫咪背景 */
@@ -140,26 +140,26 @@
 
 /* 卡通风格的宠物卡片 */
 .pet-card {
-  @apply relative overflow-hidden rounded-sm transition-all duration-300 hover:shadow-lg;
+  @apply relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-lg;
 }
 
 .pet-card::before {
   content: '';
-  @apply absolute inset-0 bg-neobrutalism-yellow opacity-80 transition-all duration-300;
+  @apply absolute inset-0 bg-gradient-to-r from-kawaii-pink/10 to-kawaii-purple/10 opacity-80 transition-all duration-300;
   z-index: -1;
 }
 
 .pet-button {
-  @apply relative overflow-hidden bg-neobrutalism-pink hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-display font-bold;
+  @apply relative overflow-hidden bg-kawaii-pink hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-display font-bold rounded-full;
 }
 
 /* 特性卡片 */
 .feature-card {
-  @apply transition-all duration-300 border-4 border-black bg-white;
+  @apply transition-all duration-300 border-2 border-kawaii-purple/20 rounded-3xl bg-white shadow-md hover:shadow-lg;
 }
 
 .feature-card:hover {
-  @apply shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] -translate-y-1 -translate-x-1;
+  @apply -translate-y-1;
 }
 
 /* 动画 */
@@ -172,6 +172,15 @@
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes bounce-small {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-bounce-small {
+  animation: bounce-small 2s ease-in-out infinite;
+}
+
 @keyframes pulse-soft {
   0%, 100% { opacity: 0.8; filter: brightness(1); }
   50% { opacity: 1; filter: brightness(1.2); }
@@ -181,11 +190,18 @@
   animation: pulse-soft 4s ease-in-out infinite;
 }
 
-/* 高对比度和醒目的颜色组合 */
-.neo-outline {
-  text-shadow: 
-    -1px -1px 0 #000,  
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000;
+/* 装饰元素 */
+.kawaii-decoration {
+  @apply absolute pointer-events-none opacity-50;
 }
+
+/* 可爱气泡 */
+.kawaii-bubble {
+  @apply bg-kawaii-blue/30 rounded-full absolute;
+}
+
+/* 星星装饰 */
+.kawaii-star {
+  @apply text-kawaii-yellow absolute animate-pulse-soft;
+}
+
