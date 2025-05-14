@@ -1,4 +1,5 @@
 
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -63,38 +64,18 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Neo-brutalist theme colors
+				// Custom pet-themed colors
 				pet: {
-					pink: '#FF405C',
+					pink: '#FF719A',
 					peach: '#FFA99F',
-					yellow: '#FFDE59',
+					yellow: '#FFE29F',
 					purple: '#E5DEFF',
 					blue: '#D3E4FD',
-				},
-				neobrutalism: {
-					black: '#000000',
-					white: '#FFFFFF',
-					yellow: '#FFDE59',
-					pink: '#FF405C',
-					blue: '#4F7CFF',
-					green: '#00CC99',
-				},
-				// Hand-drawn theme colors
-				sketch: {
-					paper: '#F9F6F0',
-					ink: '#393535',
-					primary: '#F47C7C',
-					secondary: '#70AE98',
-					accent: '#F9C784',
-					light: '#EEF0F2',
-					blue: '#A7C5EB',
 				}
 			},
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],
 				display: ['Fredoka', 'sans-serif'],
-				sketch: ['Architects Daughter', 'cursive'],  // Hand-drawn font
-				handwriting: ['Caveat', 'cursive'],          // Casual handwriting font
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -125,18 +106,6 @@ export default {
 				'pulse-soft': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.8' },
-				},
-				'wiggle': {
-					'0%, 100%': { transform: 'rotate(-3deg)' },
-					'50%': { transform: 'rotate(3deg)' },
-				},
-				'draw-line': {
-					'0%': { 'stroke-dashoffset': '1000' },
-					'100%': { 'stroke-dashoffset': '0' },
-				},
-				'sketch-appear': {
-					'0%': { opacity: '0', transform: 'translateY(10px) scale(0.95)' },
-					'100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
 				}
 			},
 			animation: {
@@ -144,15 +113,12 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite',
 				'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
-				'wiggle': 'wiggle 2s ease-in-out infinite',
-				'draw-line': 'draw-line 1.5s ease-in-out forwards',
-				'sketch-appear': 'sketch-appear 0.6s ease-out forwards',
 			},
 			backgroundImage: {
-				'gradient-pet': 'linear-gradient(225deg, #FFDE59 0%, #FFA99F 48%, #FF405C 100%)',
-				'paper-texture': "url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\"><filter id=\"noiseFilter\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.65\" numOctaves=\"3\" stitchTiles=\"stitch\"/><feColorMatrix type=\"matrix\" values=\"1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.1 0\"/></filter><rect width=\"100%\" height=\"100%\" filter=\"url(%23noiseFilter)\"/></svg>')",
+				'gradient-pet': 'linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)',
 			}
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
+
