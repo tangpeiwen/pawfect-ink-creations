@@ -4,6 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 自定义光标样式 */
+body {
+  cursor: url('/cursors/paw.svg') 16 16, auto;
+}
+
+/* 在可点击元素上显示不同的光标 */
+a, button, [role="button"] {
+  cursor: url('/cursors/paw-click.svg') 16 16, pointer;
+}
+
+@font-face {
+  font-family: 'CustomFont';  /* 这里可以改成您想要的字体名称 */
+  src: url('/fonts/小丸子.ttf') format('truetype');  /* 这里改成您的字体文件名 */
+  font-weight: 200;  /* 调整为更细的字重 */
+  font-style: normal;
+}
+
+/* 应用到所有中文文本 */
+.font-display {
+  font-family: 'CustomFont', sans-serif;
+  letter-spacing: 0.1em;  /* 增加字间距 */
+  font-weight: 200;  /* 确保应用更细的字重 */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

@@ -1,17 +1,15 @@
 import { Link } from "react-router-dom";
-import { PawPrint, Heart } from "lucide-react";
+import { Cat, Heart } from "lucide-react";
 
 const Footer = () => {
   return (
     <footer className="bg-gray-50 pt-12 pb-6">
-      <div className="container px-4 mx-auto">
+      <div className="container px-8 md:px-12 lg:px-16 mx-auto max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-pet-pink rounded-full flex items-center justify-center">
-                <PawPrint className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-display font-bold text-pet-pink">萌宠纹身</span>
+              <img src="/images/Cat.svg" alt="猫咪" className="w-10 h-10" />
+              <img src="/images/Pawfect.svg" alt="Me & Paw" className="h-7" />
             </Link>
             <p className="mt-4 text-gray-500 text-sm">
               让您的宠物变成可爱的纹身贴，<br />
@@ -49,20 +47,20 @@ const Footer = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-lg mb-4">联系我们</h3>
-            <p className="text-gray-500">客服邮箱: support@mengchong.com</p>
+            <p className="text-gray-500">邮箱: support@mengchong.com</p>
             <p className="text-gray-500 mt-2">工作时间: 周一至周五 9:00-18:00</p>
-            <div className="mt-4 bg-white rounded-xl p-4 border border-pet-pink/20">
+            {/* <div className="mt-4 bg-white rounded-xl p-4 border border-pet-pink/20">
               <p className="text-sm font-medium text-gray-700">订阅我们的电子报</p>
               <div className="mt-2 flex">
                 <input type="email" placeholder="您的邮箱地址" className="flex-1 rounded-l-full border-y border-l border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-pet-pink" />
                 <button className="bg-gradient-pet text-white rounded-r-full px-4 py-2 text-sm">订阅</button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
         <div className="border-t border-gray-200 mt-10 pt-6 text-center flex flex-col items-center">
           <p className="text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} 萌宠纹身贴. 版权所有.
+            &copy; {new Date().getFullYear()} Pawfect Ink. 版权所有.
           </p>
           <div className="flex items-center text-pet-pink mt-2 text-sm justify-center">
             <Heart className="h-4 w-4 mr-1 fill-pet-pink" />
