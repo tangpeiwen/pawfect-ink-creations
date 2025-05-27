@@ -104,7 +104,7 @@ const FeatureSelector = ({
   return (
     <div className="w-full">
       <h3 className="text-xl font-display font-bold mb-4">选择需要强调的特征</h3>
-      <p className="text-sm text-gray-500 mb-6">选择您希望在纹身贴中突出的宠物特征（至少选择1项）</p>
+      <p className="text-sm text-gray-500 mb-6">选择您希望在纹身贴中突出的宠物特征（可选）</p>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {features.map((feature) => (

@@ -11,6 +11,29 @@ interface GeneratorResultProps {
 }
 
 const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: GeneratorResultProps) => {
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+
+  // 添加调试信息
+  console.log('GeneratorResult 渲染状态:', {
+    loading,
+    resultImage,
+    imageError,
+    imageLoaded
+  });
+
+  const handleImageLoad = () => {
+    console.log('图片加载成功:', resultImage);
+    setImageLoaded(true);
+    setImageError(null);
+  };
+
+  const handleImageError = (error: any) => {
+    console.error('图片加载失败:', resultImage, error);
+    setImageError(`图片加载失败: ${resultImage}`);
+    setImageLoaded(false);
+  };
+
   return (
     <div className="w-full">
       <h3 className="text-xl font-display font-bold mb-4">生成结果</h3>
@@ -26,32 +49,74 @@ const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: Gene
                 </svg>
               </div>
               <p className="text-lg font-display font-medium text-center">AI正在为您生成宠物贴纸...</p>
-              <p className="text-sm text-gray-500 text-center mt-2">这可能需要30-60秒，请耐心等待</p>
+              <p className="text-sm text-gray-500 text-center mt-2">这可能需要20-30秒，请耐心等待</p>
             </div>
           ) : resultImage ? (
             <div className="p-4">
+              {/* 添加调试信息显示 */}
+              <div className="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
+                <div>图片URL: {resultImage}</div>
+                <div>加载状态: {imageLoaded ? '已加载' : '未加载'}</div>
+                {imageError && <div className="text-red-600">错误: {imageError}</div>}
+              </div>
+              
               <div className="relative w-full aspect-square max-w-md mx-auto mb-4">
-                <img 
-                  src={resultImage} 
-                  alt="生成的宠物贴纸" 
-                  className="w-full h-full object-contain rounded-lg"
-                />
-                <a 
-                  href={resultImage} 
-                  download="pet-sticker.png"
-                  className="absolute bottom-2 right-2 bg-white/80 backdrop-blur-sm text-pet-pink p-2 rounded-full hover:bg-white transition-all"
-                  title="下载图片"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toast.success("开始下载宠物贴纸");
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                </a>
+                {imageError ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 mb-2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p className="text-sm text-gray-500 text-center">{imageError}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => {
+                        setImageError(null);
+                        setImageLoaded(false);
+                      }}
+                    >
+                      重试加载
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <img 
+                      src={resultImage} 
+                      alt="生成的宠物贴纸" 
+                      className="w-full h-full object-contain rounded-lg"
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                      style={{ display: imageLoaded ? 'block' : 'none' }}
+                    />
+                    {!imageLoaded && (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+                        <div className="animate-spin h-8 w-8 border-2 border-pet-pink border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {imageLoaded && !imageError && (
+                  <a 
+                    href={resultImage} 
+                    download="pet-sticker.png"
+                    className="absolute bottom-2 right-2 bg-white/80 backdrop-blur-sm text-pet-pink p-2 rounded-full hover:bg-white transition-all"
+                    title="下载图片"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toast.success("开始下载宠物贴纸");
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                  </a>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 

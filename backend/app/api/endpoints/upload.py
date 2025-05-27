@@ -8,6 +8,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks,
 from app.core.config import settings
 from app.models.schemas import UploadResponse, ErrorResponse
 from app.utils.image_processing import validate_image, preprocess_image
+from app.services.openai_service import analyze_pet_image
 import io
 import asyncio
 from PIL import Image
@@ -40,7 +41,7 @@ async def upload_image(
     response: Response = None
 ):
     """
-    上传宠物图片并进行预处理
+    上传宠物图片并进行预处理和分析
     """
     # 手动添加CORS头
     if response:

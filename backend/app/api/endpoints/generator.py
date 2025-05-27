@@ -126,27 +126,47 @@ async def process_generation_task(task: GenerationTask):
         
         style_prompt = style.promptDescription
         
-        # 处理特征强调
+        # 处理特征强调（简化版，避免与分析重复）
         emphasis_instructions = generate_emphasis_instructions(
             task.emphasisFeatures,
             task.customFeatures,
             task.additionalElements
         )
         
+        # 添加详细的日志输出
+        logger.info(f"任务 {task.id} 的详细参数:")
+        logger.info(f"  - 选择的特征: {task.emphasisFeatures}")
+        logger.info(f"  - 自定义特征: {task.customFeatures}")
+        logger.info(f"  - 额外元素: {task.additionalElements}")
+        logger.info(f"  - 生成的特征强调指令: {emphasis_instructions}")
+        
         # 更新进度
         task.progress = 30
         generation_tasks[task.id] = task
         
-        # 第一步：分析用户图片
+        # 进行图片分析，结合用户选择的特征
+        logger.info("开始分析宠物图片特征")
+        # 构建分析指导，让AI重点关注用户选择的特征
+        analysis_guidance = []
+        if task.emphasisFeatures:
+            feature_names = {"eyes": "眼睛", "ears": "耳朵", "nose": "鼻子", "fur": "毛发", "posture": "姿势", "expression": "表情"}
+            selected_features = [feature_names.get(f, f) for f in task.emphasisFeatures]
+            analysis_guidance.append(f"请特别关注以下特征: {', '.join(selected_features)}")
+        
+        if task.customFeatures:
+            analysis_guidance.append(f"用户特别提到的特征: {', '.join(task.customFeatures)}")
+        
         image_analysis = await analyze_pet_image(
             user_image_path, 
+            analysis_guidance  # 传递分析指导字符串列表
         )
+        logger.info(f"图片分析完成: {image_analysis[:100]}...")
         
         # 更新进度
         task.progress = 50
         generation_tasks[task.id] = task
         
-        # 第二步：组合分析结果和风格，生成贴纸
+        # 使用新方案：用户图片 + 风格参考图片 + 文字描述生成贴纸
         result_path = await generate_sticker_with_custom_api(
             user_image_path,
             style_reference_images,
@@ -176,31 +196,29 @@ async def process_generation_task(task: GenerationTask):
 
 def generate_emphasis_instructions(emphasis_features, custom_features, additional_elements):
     """
-    生成特征强调说明
+    生成设计要求说明（避免与图片分析重复）
     """
-    feature_descriptions = {
-        "eyes": "特别突出眼睛的神态和形状，保持眼睛的表现力",
-        "ears": "强调耳朵的形状和比例，确保耳朵特征明显",
-        "nose": "细致刻画鼻子形状和纹理，保持鼻子的特征",
-        "fur": "注重毛发的质感和纹理，表现毛发的流动感",
-        "posture": "保留宠物特有的姿势和肢体语言",
-        "expression": "捕捉并强化宠物的表情，突出情感表达"
-    }
+    design_instructions = []
     
-    emphasis_instructions = []
+    # 添加具体的特征强调要求
+    if emphasis_features and len(emphasis_features) > 0:
+        feature_names = {"eyes": "眼睛", "ears": "耳朵", "nose": "鼻子", "fur": "毛发", "posture": "姿势", "expression": "表情"}
+        selected_features = [feature_names.get(f, f) for f in emphasis_features]
+        design_instructions.append(f"重点突出：{', '.join(selected_features)}")
     
-    # 添加预设特征强调
-    for feature in emphasis_features:
-        if feature in feature_descriptions:
-            emphasis_instructions.append(feature_descriptions[feature])
-    
-    # 添加自定义特征
+    # 添加自定义特征要求
     if custom_features and len(custom_features) > 0:
-        emphasis_instructions.append("自定义强调特征：" + "，".join(custom_features))
+        custom_text = "，".join(custom_features)
+        design_instructions.append(f"特别强调以下自定义特征：{custom_text}")
     
     # 添加额外元素
     if additional_elements and len(additional_elements) > 0:
-        emphasis_instructions.append("添加以下元素：" + "，".join(additional_elements))
+        elements_text = "，".join(additional_elements)
+        design_instructions.append(f"添加以下装饰元素：{elements_text}")
+    
+    # 如果没有特殊要求，返回空字符串而不是通用指导
+    if not design_instructions:
+        return ""
     
     # 组合所有指令
-    return "\n".join(emphasis_instructions) 
+    return "\n".join(design_instructions) 

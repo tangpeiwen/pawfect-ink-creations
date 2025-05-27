@@ -20,7 +20,7 @@ const CreatePage = () => {
   const [imageId, setImageId] = useState<string>("");
   const [selectedStyle, setSelectedStyle] = useState<string>("watercolor");
   const [stylePrompt, setStylePrompt] = useState<string>("");
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(["eyes", "expression"]);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [customFeatures, setCustomFeatures] = useState<string[]>([]);
   const [additionalElements, setAdditionalElements] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -42,42 +42,18 @@ const CreatePage = () => {
       const uploadResult = await uploadImage(file);
       if (uploadResult.success && uploadResult.imageId) {
         setImageId(uploadResult.imageId);
-        
-        // 如果上传结果包含分析，使用它
-        if (uploadResult.analysis) {
-          setPetFeatures(uploadResult.analysis);
-          
-          // 基于分析结果提取一些自定义特征
-          const analysisWords = uploadResult.analysis.split(/[,，、\s]+/).filter(word => word.trim().length > 0);
-          if (analysisWords.length > 0) {
-            const autoFeatures = analysisWords.slice(0, 3);
-            setCustomFeatures(autoFeatures);
-          }
-        } else {
-          // 如果没有分析结果，单独进行分析
-          setIsAnalyzing(true);
-          const analysis = await analyzePetImage(file);
-          setPetFeatures(analysis);
-          
-          const analysisWords = analysis.split(/[,，、\s]+/).filter(word => word.trim().length > 0);
-          if (analysisWords.length > 0) {
-            const autoFeatures = analysisWords.slice(0, 3);
-            setCustomFeatures(autoFeatures);
-          }
-          setIsAnalyzing(false);
-        }
+        // 移除对上传时analysis的处理，因为现在在生成时才进行分析
       } else {
         throw new Error(uploadResult.message || '上传失败');
       }
     } catch (error) {
-      console.error('上传或分析失败:', error);
-      setIsAnalyzing(false);
+      console.error('上传失败:', error);
       toast.error(`上传失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return;
     }
     
-    // 自动前进到下一步
-    setActiveStep("style");
+    // 上传成功，显示成功提示
+    toast.success("图片上传成功！请点击下一步继续选择风格。");
   };
   
   const handleStyleSelect = (styleId: string) => {
@@ -101,24 +77,37 @@ const CreatePage = () => {
   };
   
   const handleGenerate = async () => {
+    // 添加详细的调试信息
+    console.log('=== handleGenerate 被调用 ===');
+    console.log('uploadedImage:', uploadedImage);
+    console.log('imageId:', imageId);
+    console.log('selectedFeatures:', selectedFeatures);
+    console.log('customFeatures:', customFeatures);
+    console.log('stylePrompt:', stylePrompt);
+    console.log('selectedStyle:', selectedStyle);
+    
     // Validate inputs
     if (!uploadedImage || !imageId) {
+      console.log('验证失败: 缺少上传图片或imageId');
       toast.error("请先上传宠物照片");
       setActiveStep("upload");
       return;
     }
     
-    if (selectedFeatures.length === 0 && customFeatures.length === 0) {
-      toast.error("请至少选择一个需要强调的特征");
-      return;
-    }
+    // 移除特征选择的强制要求，允许用户不选择任何特征
+    // if (selectedFeatures.length === 0 && customFeatures.length === 0) {
+    //   console.log('验证失败: 没有选择任何特征');
+    //   toast.error("请至少选择一个需要强调的特征");
+    //   return;
+    // }
 
     if (!stylePrompt) {
+      console.log('验证失败: 没有选择风格');
       toast.error("请选择一种风格");
       return;
     }
     
-    console.log('=== 开始生成流程 ===');
+    console.log('=== 所有验证通过，开始生成流程 ===');
     console.log('imageId:', imageId);
     console.log('selectedStyle:', selectedStyle);
     console.log('selectedFeatures:', selectedFeatures);
@@ -183,9 +172,15 @@ const CreatePage = () => {
               clearInterval(statusCheckInterval);
               
               if (statusResult.status === 'completed' && statusResult.resultUrl) {
+                console.log('=== 设置生成结果 ===');
+                console.log('resultUrl:', statusResult.resultUrl);
+                console.log('当前resultImages:', resultImages);
+                
                 setResultImages([statusResult.resultUrl]);
                 setSelectedResultIndex(0);
                 setIsGenerating(false);
+                
+                console.log('结果设置完成，resultImages应该更新为:', [statusResult.resultUrl]);
                 toast.success("贴纸生成完成！");
               } else if (statusResult.status === 'failed') {
                 setIsGenerating(false);
@@ -229,6 +224,14 @@ const CreatePage = () => {
   // 当前选中的结果图片
   const currentResultImage = resultImages[selectedResultIndex] || null;
   
+  // 添加调试信息
+  console.log('CreatePage 当前状态:', {
+    resultImages,
+    selectedResultIndex,
+    currentResultImage,
+    isGenerating
+  });
+  
   return (
     <Layout>
       <div className="container py-12">
@@ -257,7 +260,7 @@ const CreatePage = () => {
                 </div>
                 <div className="text-center space-y-2">
                   <p className="text-lg font-medium">{generationStatus}</p>
-                  <p className="text-sm text-gray-500">这可能需要30-60秒，请耐心等待</p>
+                  <p className="text-sm text-gray-500">这可能需要20-30秒，请耐心等待</p>
                 </div>
                 <div className="w-full space-y-2">
                   <div className="flex justify-between text-sm">
@@ -286,23 +289,12 @@ const CreatePage = () => {
             <TabsContent value="upload" className="space-y-8">
               <UploadSection onImageUploaded={handleImageUpload} />
               
-              {isAnalyzing && (
-                <div className="flex items-center justify-center p-4 bg-pet-blue/20 rounded-lg">
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-pet-pink border-t-transparent rounded-full"></div>
-                  <p className="text-sm text-gray-600">正在分析宠物特征...</p>
-                </div>
-              )}
-              
-              {petFeatures && (
-                <div className="p-4 bg-pet-blue/20 rounded-lg">
-                  <h4 className="font-medium mb-2">已检测到的宠物特征:</h4>
-                  <p className="text-sm text-gray-600">{petFeatures}</p>
-                </div>
-              )}
-              
               <div className="flex justify-end">
                 <Button 
-                  className="pet-button"
+                  className={`pet-button transition-all duration-300 ${
+                    uploadedImage ? 'scale-105 shadow-lg' : ''
+                  }`}
+                  disabled={!uploadedImage}
                   onClick={() => {
                     if (uploadedImage) {
                       setActiveStep("style");
@@ -311,7 +303,7 @@ const CreatePage = () => {
                     }
                   }}
                 >
-                  下一步
+                  {uploadedImage ? '选择风格' : '请先上传照片'}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </Button>
               </div>

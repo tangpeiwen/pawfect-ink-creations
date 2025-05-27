@@ -42,8 +42,15 @@ const StyleSelector = ({
         
         setStyles(formattedStyles);
         
+        // 如果已经有选中的风格，设置对应的stylePrompt
+        if (selectedStyle && formattedStyles.length > 0) {
+          const selectedStyleObj = formattedStyles.find(style => style.id === selectedStyle);
+          if (selectedStyleObj && onStylePromptChange) {
+            onStylePromptChange(selectedStyleObj.promptDescription);
+          }
+        }
         // 如果没有选中风格且有可用风格，则默认选择第一个
-        if (!selectedStyle && formattedStyles.length > 0) {
+        else if (!selectedStyle && formattedStyles.length > 0) {
           handleStyleSelect(formattedStyles[0].id);
         }
       } catch (err) {
@@ -51,7 +58,7 @@ const StyleSelector = ({
         setError("获取风格列表失败，请稍后重试");
         
         // 加载失败时使用默认数据
-        setStyles([
+        const defaultStyles = [
           {
             id: "watercolor",
             name: "蜡笔插画风",
@@ -80,14 +87,28 @@ const StyleSelector = ({
             description: "保留丰富体态结构，细节刻画细腻",
             promptDescription: "细节写意风格，精细的线条变化，保留丰富的体态结构，细腻的纹理刻画，保持解剖学准确性但有艺术性简化"
           }
-        ]);
+        ];
+        
+        setStyles(defaultStyles);
+        
+        // 如果已经有选中的风格，设置对应的stylePrompt
+        if (selectedStyle) {
+          const selectedStyleObj = defaultStyles.find(style => style.id === selectedStyle);
+          if (selectedStyleObj && onStylePromptChange) {
+            onStylePromptChange(selectedStyleObj.promptDescription);
+          }
+        }
+        // 如果没有选中风格，则默认选择第一个
+        else if (defaultStyles.length > 0) {
+          handleStyleSelect(defaultStyles[0].id);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadStyles();
-  }, [selectedStyle]);
+  }, []); // 移除selectedStyle依赖，避免重复加载
 
   const handleStyleSelect = (styleId: string) => {
     onStyleSelect(styleId);

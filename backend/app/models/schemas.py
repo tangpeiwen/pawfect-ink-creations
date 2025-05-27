@@ -12,6 +12,7 @@ class BaseResponse(BaseModel):
 class UploadResponse(BaseResponse):
     imageId: str
     previewUrl: str
+    analysis: Optional[str] = None
 
 # 风格模型
 class Style(BaseModel):
