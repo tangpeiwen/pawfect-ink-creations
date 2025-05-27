@@ -1,76 +1,143 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { fetchStyles } from "@/lib/api";
 
 interface Style {
   id: string;
   name: string;
   image: string;
   description: string;
+  promptDescription: string;
 }
 
 interface StyleSelectorProps {
   selectedStyle: string;
   onStyleSelect: (styleId: string) => void;
+  onStylePromptChange?: (promptDescription: string) => void;
 }
 
-const StyleSelector = ({ selectedStyle, onStyleSelect }: StyleSelectorProps) => {
-  const styles: Style[] = [
-    {
-      id: "minimalist",
-      name: "简约线条风",
-      image: "/placeholder.svg",
-      description: "简单细腻的线条勾勒宠物特征"
-    },
-    {
-      id: "watercolor",
-      name: "水彩淡染风",
-      image: "/placeholder.svg",
-      description: "柔和的水彩效果展现宠物个性"
-    },
-    {
-      id: "cartoon",
-      name: "可爱卡通风",
-      image: "/placeholder.svg",
-      description: "萌趣的卡通风格彰显宠物魅力"
-    },
-    {
-      id: "geometric",
-      name: "几何创意风",
-      image: "/placeholder.svg",
-      description: "现代几何图形组合独特造型"
+const StyleSelector = ({ 
+  selectedStyle, 
+  onStyleSelect,
+  onStylePromptChange 
+}: StyleSelectorProps) => {
+  const [styles, setStyles] = useState<Style[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadStyles = async () => {
+      try {
+        setLoading(true);
+        const apiStyles = await fetchStyles();
+        
+        // 将API返回的数据转换为本地所需格式
+        const formattedStyles = apiStyles.map((style: any) => ({
+          id: style.id,
+          name: style.name,
+          image: style.previewUrl, // 使用API返回的previewUrl作为图片地址
+          description: style.description,
+          promptDescription: style.promptDescription
+        }));
+        
+        setStyles(formattedStyles);
+        
+        // 如果没有选中风格且有可用风格，则默认选择第一个
+        if (!selectedStyle && formattedStyles.length > 0) {
+          handleStyleSelect(formattedStyles[0].id);
+        }
+      } catch (err) {
+        console.error("获取风格列表失败:", err);
+        setError("获取风格列表失败，请稍后重试");
+        
+        // 加载失败时使用默认数据
+        setStyles([
+          {
+            id: "watercolor",
+            name: "蜡笔插画风",
+            image: "/public/images/彩色.jpg",
+            description: "线条较粗，手绘感强，保留可爱氛围",
+            promptDescription: "手绘笔触，蜡笔质感，涂鸦风格，粗线条勾勒，色彩鲜艳但有限，有轻微的不规则笔触纹理"
+          },
+          {
+            id: "minimalist",
+            name: "粗线条手绘风",
+            image: "/public/images/简笔.jpg",
+            description: "线条不规则，带有铅笔或炭笔质感",
+            promptDescription: "粗线条手绘效果，线条不规则，带有铅笔或炭笔质感，简约但具有表现力，有意的粗糙感，线条有力"
+          },
+          {
+            id: "cartoon",
+            name: "Q版贴纸风",
+            image: "/public/images/卡通.jpg",
+            description: "表情Q萌的卡通风格",
+            promptDescription: "Q版贴纸风格，简笔画线稿，手绘可爱效果，略微夸张的特征，线条粗细变化，平面化设计，适合贴纸的封闭轮廓"
+          },
+          {
+            id: "des",
+            name: "细节写意风",
+            image: "/public/images/花纹.jpg",
+            description: "保留丰富体态结构，细节刻画细腻",
+            promptDescription: "细节写意风格，精细的线条变化，保留丰富的体态结构，细腻的纹理刻画，保持解剖学准确性但有艺术性简化"
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStyles();
+  }, [selectedStyle]);
+
+  const handleStyleSelect = (styleId: string) => {
+    onStyleSelect(styleId);
+    
+    const selectedStyleObj = styles.find(style => style.id === styleId);
+    if (selectedStyleObj && onStylePromptChange) {
+      onStylePromptChange(selectedStyleObj.promptDescription);
     }
-  ];
+  };
 
   return (
     <div className="w-full">
       <h3 className="text-xl font-display font-bold mb-4">选择纹身风格</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {styles.map((style) => (
-          <Card 
-            key={style.id}
-            className={`cursor-pointer transition-all hover:shadow-md overflow-hidden ${selectedStyle === style.id ? 'ring-4 ring-pet-pink ring-offset-2' : ''}`}
-            onClick={() => onStyleSelect(style.id)}
-          >
-            <div className="aspect-square relative overflow-hidden">
-              <img 
-                src={style.image} 
-                alt={style.name} 
-                className="w-full h-full object-cover"
-              />
-              {selectedStyle === style.id && (
-                <div className="absolute top-2 right-2 w-6 h-6 bg-pet-pink rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-              )}
-            </div>
-            <CardContent className="p-3">
-              <h4 className="font-display font-medium">{style.name}</h4>
-              <p className="text-xs text-gray-500 mt-1">{style.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pet-pink"></div>
+        </div>
+      ) : error ? (
+        <div className="p-4 bg-red-50 text-red-500 rounded-md mb-4">
+          {error}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {styles.map((style) => (
+            <Card 
+              key={style.id}
+              className={`cursor-pointer transition-all hover:shadow-md overflow-hidden ${selectedStyle === style.id ? 'ring-4 ring-pet-pink ring-offset-2' : ''}`}
+              onClick={() => handleStyleSelect(style.id)}
+            >
+              <div className="aspect-square relative overflow-hidden bg-white p-2">
+                <img 
+                  src={style.image} 
+                  alt={style.name} 
+                  className="w-full h-full object-contain"
+                />
+                {selectedStyle === style.id && (
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-pet-pink rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                )}
+              </div>
+              <CardContent className="p-3">
+                <h4 className="font-display font-medium">{style.name}</h4>
+                <p className="text-xs text-gray-500 mt-1">{style.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
