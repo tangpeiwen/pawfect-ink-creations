@@ -30,11 +30,13 @@ app.add_middleware(
     max_age=86400,  # 预检请求缓存时间（秒）
 )
 
+# 挂载静态文件服务
+app.mount("/storage", StaticFiles(directory=settings.STORAGE_DIR), name="storage")
+
 # 注册API路由
 app.include_router(api_router, prefix="/api")
 
-# 挂载静态文件目录
-app.mount("/storage", StaticFiles(directory=settings.STORAGE_DIR), name="storage")
+# 静态文件现在通过Supabase存储提供，不再需要本地静态文件挂载
 
 @app.get("/")
 async def root():

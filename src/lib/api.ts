@@ -1,5 +1,37 @@
+import { supabase } from './supabase';
+
 // 使用相对路径，通过Vite代理访问API
 const API_BASE = '/api';
+
+/**
+ * 获取认证头信息
+ */
+const getAuthHeaders = async () => {
+  const { data } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (data.session?.access_token) {
+    headers['Authorization'] = `Bearer ${data.session.access_token}`;
+  }
+  
+  return headers;
+};
+
+/**
+ * 获取包含认证信息的FormData请求头（不包含Content-Type）
+ */
+const getAuthHeadersForFormData = async () => {
+  const { data } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+  
+  if (data.session?.access_token) {
+    headers['Authorization'] = `Bearer ${data.session.access_token}`;
+  }
+  
+  return headers;
+};
 
 /**
  * 获取所有风格列表
@@ -38,10 +70,13 @@ export const uploadImage = async (file: File) => {
     const formData = new FormData();
     formData.append('image', file);
     
+    const authHeaders = await getAuthHeadersForFormData();
+    
     console.log('通过Vite代理上传图片');
     const response = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: authHeaders
     });
 
     console.log('上传响应状态:', response.status, response.statusText);
@@ -105,10 +140,13 @@ export const generateSticker = async (
     console.log('请求URL:', `${API_BASE}/generate`);
     console.log('请求体:', JSON.stringify(requestBody, null, 2));
     
+    const authHeaders = await getAuthHeaders();
+    
     // 发起生成请求
     const generateResponse = await fetch(`${API_BASE}/generate`, {
       method: 'POST',
       headers: {
+        ...authHeaders,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
@@ -171,7 +209,7 @@ const pollGenerationStatus = async (generationId: string) => {
   const interval = 10000; // 每10秒轮询一次
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const statusResponse = await fetch(`${API_BASE}/generation/${generationId}/status`);
+    const statusResponse = await fetch(`${API_BASE}/status/${generationId}`);
     
     if (!statusResponse.ok) {
       throw new Error(`获取生成状态失败: HTTP error! status: ${statusResponse.status}`);
@@ -208,9 +246,13 @@ export const checkGenerationStatus = async (generationId: string) => {
   try {
     console.log('=== 检查生成状态 ===');
     console.log('generationId:', generationId);
-    console.log('请求URL:', `${API_BASE}/generation/${generationId}/status`);
+    console.log('请求URL:', `${API_BASE}/status/${generationId}`);
     
-    const response = await fetch(`${API_BASE}/generation/${generationId}/status`);
+    const authHeaders = await getAuthHeaders();
+    
+    const response = await fetch(`${API_BASE}/status/${generationId}`, {
+      headers: authHeaders
+    });
     
     console.log('状态检查响应:', response.status, response.statusText);
     

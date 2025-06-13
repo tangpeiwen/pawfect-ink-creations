@@ -39,10 +39,10 @@ async def get_style_reference_images(style_id: str) -> List[Path]:
     """
     # 风格ID到多张参考图片的映射
     style_file_mapping = {
-        "watercolor": ["彩色.jpg", "cat2.jpg", "cat.png"],  # 蜡笔插画风
-        "minimalist": ["简笔.jpg", "线条.jpg", "bikini.jpg"],   # 粗线条手绘风
-        "cartoon": ["cat_cartoon.jpg", "cat3.jpg"],      # Q版贴纸风
-        "detailed": ["花纹.jpg", "dogs.jpg"]      # 细节写意风
+        "watercolor": ["watercolor.jpg"],  # 蜡笔插画风
+        "minimalist": ["minimalist.jpg"],   # 粗线条手绘风
+        "cartoon": ["cartoon.jpg"],      # Q版贴纸风
+        "detailed": ["detailed.jpg"]      # 细节写意风
     }
     
     if style_id not in style_file_mapping:

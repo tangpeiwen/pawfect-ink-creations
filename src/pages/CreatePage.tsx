@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import UploadSection from "@/components/UploadSection";
@@ -7,7 +7,7 @@ import FeatureSelector from "@/components/FeatureSelector";
 import GeneratorResult from "@/components/GeneratorResult";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { analyzePetImage } from '@/lib/openaiService';
 import { generateSticker, checkGenerationStatus, uploadImage } from '@/lib/api';
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const CreatePage = () => {
+  const navigate = useNavigate();
+  
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imageId, setImageId] = useState<string>("");
   const [selectedStyle, setSelectedStyle] = useState<string>("watercolor");
@@ -29,11 +31,12 @@ const CreatePage = () => {
   const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
   const [activeStep, setActiveStep] = useState<string>("upload");
   const [petFeatures, setPetFeatures] = useState<string>("");
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   
   // 添加生成进度状态
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [generationStatus, setGenerationStatus] = useState<string>("");
-  
+
   const handleImageUpload = async (file: File) => {
     setUploadedImage(file);
     
@@ -77,42 +80,17 @@ const CreatePage = () => {
   };
   
   const handleGenerate = async () => {
-    // 添加详细的调试信息
-    console.log('=== handleGenerate 被调用 ===');
-    console.log('uploadedImage:', uploadedImage);
-    console.log('imageId:', imageId);
-    console.log('selectedFeatures:', selectedFeatures);
-    console.log('customFeatures:', customFeatures);
-    console.log('stylePrompt:', stylePrompt);
-    console.log('selectedStyle:', selectedStyle);
-    
-    // Validate inputs
+    // 验证输入
     if (!uploadedImage || !imageId) {
-      console.log('验证失败: 缺少上传图片或imageId');
       toast.error("请先上传宠物照片");
       setActiveStep("upload");
       return;
     }
-    
-    // 移除特征选择的强制要求，允许用户不选择任何特征
-    // if (selectedFeatures.length === 0 && customFeatures.length === 0) {
-    //   console.log('验证失败: 没有选择任何特征');
-    //   toast.error("请至少选择一个需要强调的特征");
-    //   return;
-    // }
 
     if (!stylePrompt) {
-      console.log('验证失败: 没有选择风格');
       toast.error("请选择一种风格");
       return;
     }
-    
-    console.log('=== 所有验证通过，开始生成流程 ===');
-    console.log('imageId:', imageId);
-    console.log('selectedStyle:', selectedStyle);
-    console.log('selectedFeatures:', selectedFeatures);
-    console.log('customFeatures:', customFeatures);
-    console.log('additionalElements:', additionalElements);
     
     // 重置进度和结果
     setGenerationProgress(0);
@@ -155,17 +133,46 @@ const CreatePage = () => {
         const generationId = result.generationId;
         console.log('开始轮询生成状态，generationId:', generationId);
         
-        // 开始轮询生成状态
+        let pollCount = 0;
+        const maxPollCount = 120; // 最多轮询2分钟（每秒一次）
+        
+        // 开始轮询生成状态 - 使用更高效的策略
         const statusCheckInterval = setInterval(async () => {
           try {
-            const statusResult = await checkGenerationStatus(generationId);
-            console.log('状态检查结果:', statusResult);
+            pollCount++;
             
-            // 更新进度
-            setGenerationProgress(statusResult.progress || 0);
-            setGenerationStatus(statusResult.status === 'completed' ? 
-              '生成完成' : 
-              statusResult.status === 'failed' ? '生成失败' : '正在生成中...');
+            // 超时检查
+            if (pollCount > maxPollCount) {
+              clearInterval(statusCheckInterval);
+              setIsGenerating(false);
+              setGenerationStatus("生成超时");
+              toast.error("生成时间过长，请稍后重试");
+              return;
+            }
+            
+            const statusResult = await checkGenerationStatus(generationId);
+            console.log(`状态检查结果 (${pollCount}/${maxPollCount}):`, statusResult);
+            
+            // 更新进度和状态描述
+            const progress = statusResult.progress || 0;
+            setGenerationProgress(progress);
+            
+            // 根据进度显示不同的状态描述
+            let statusText = "正在生成中...";
+            if (progress <= 20) statusText = "正在验证图片...";
+            else if (progress <= 40) statusText = "正在分析宠物特征...";
+            else if (progress <= 60) statusText = "正在准备风格参考...";
+            else if (progress <= 80) statusText = "AI正在创作中...";
+            else if (progress <= 95) statusText = "正在保存结果...";
+            else if (progress < 100) statusText = "即将完成...";
+            
+            if (statusResult.status === 'completed') {
+              statusText = '生成完成';
+            } else if (statusResult.status === 'failed') {
+              statusText = '生成失败';
+            }
+            
+            setGenerationStatus(statusText);
             
             // 如果完成或失败，清除定时器并设置结果
             if (statusResult.status === 'completed' || statusResult.status === 'failed') {
@@ -179,19 +186,26 @@ const CreatePage = () => {
                 setResultImages([statusResult.resultUrl]);
                 setSelectedResultIndex(0);
                 setIsGenerating(false);
+                setGenerationProgress(100);
                 
                 console.log('结果设置完成，resultImages应该更新为:', [statusResult.resultUrl]);
                 toast.success("贴纸生成完成！");
               } else if (statusResult.status === 'failed') {
                 setIsGenerating(false);
+                setGenerationProgress(0);
                 toast.error(`生成失败: ${statusResult.error || '未知错误'}`);
               }
             }
           } catch (error) {
             console.error('检查状态失败:', error);
-            // 如果检查状态失败，不要立即停止，让它继续尝试
+            // 如果检查状态失败，继续尝试，但增加失败计数
+            if (pollCount > maxPollCount * 0.8) { // 在最后20%的时间里如果一直失败就停止
+              clearInterval(statusCheckInterval);
+              setIsGenerating(false);
+              toast.error('无法获取生成状态，请刷新页面重试');
+            }
           }
-        }, 3000);  // 每3秒检查一次
+        }, 1000);  // 改为每1秒检查一次，提供更及时的反馈
       } else if (result.images && result.images.length > 0) {
         // 如果直接返回了图片，则设置结果
         setResultImages(result.images);
@@ -199,6 +213,7 @@ const CreatePage = () => {
         setGenerationProgress(100);
         setGenerationStatus("生成完成");
         setIsGenerating(false);
+        
         toast.success("贴纸生成完成！");
       } else {
         throw new Error('生成结果格式错误');
@@ -218,7 +233,8 @@ const CreatePage = () => {
   
   const handleConfirm = () => {
     toast.success("已确认设计！正在前往订单页面...");
-    // In a real app, this would navigate to a payment/checkout page
+    // 这里可以跳转到实际的订单页面
+    navigate("/pricing");
   };
 
   // 当前选中的结果图片
@@ -231,6 +247,39 @@ const CreatePage = () => {
     currentResultImage,
     isGenerating
   });
+  
+  // 处理平滑过渡到风格选择页面
+  const handleProceedToStyle = async () => {
+    if (!uploadedImage) {
+      toast.error("请先上传宠物照片");
+      return;
+    }
+    
+    setIsTransitioning(true);
+    
+    // 显示过渡提示
+    toast.info("正在为您准备风格选择页面...", {
+      duration: 1000,
+    });
+    
+    // 短暂延迟以显示加载状态
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    // 跳转到风格选择页面
+    setActiveStep("style");
+    
+    // 再次短暂延迟以显示页面切换动画
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    setIsTransitioning(false);
+    
+    // 显示引导提示
+    setTimeout(() => {
+      toast.success("选择您喜欢的风格，让AI为您的宠物打造独特贴纸！", {
+        duration: 3000,
+      });
+    }, 100);
+  };
   
   return (
     <Layout>
@@ -291,39 +340,58 @@ const CreatePage = () => {
               
               <div className="flex justify-end">
                 <Button 
-                  className={`pet-button transition-all duration-300 ${
-                    uploadedImage ? 'scale-105 shadow-lg' : ''
-                  }`}
-                  disabled={!uploadedImage}
-                  onClick={() => {
-                    if (uploadedImage) {
-                      setActiveStep("style");
-                    } else {
-                      toast.error("请先上传宠物照片");
-                    }
-                  }}
+                  className={`pet-button transition-all duration-500 ${
+                    uploadedImage ? 'scale-105 shadow-lg hover:scale-110' : ''
+                  } ${isTransitioning ? 'cursor-not-allowed opacity-90' : ''}`}
+                  disabled={!uploadedImage || isTransitioning}
+                  onClick={handleProceedToStyle}
                 >
-                  {uploadedImage ? '选择风格' : '请先上传照片'}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                  {isTransitioning ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="animate-pulse">准备中...</span>
+                    </>
+                  ) : uploadedImage ? (
+                    <>
+                      选择风格
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </>
+                  ) : (
+                    '请先上传照片'
+                  )}
                 </Button>
               </div>
             </TabsContent>
             
-            <TabsContent value="style" className="space-y-8">
-              <StyleSelector 
-                selectedStyle={selectedStyle}
-                onStyleSelect={handleStyleSelect}
-                onStylePromptChange={handleStylePromptChange}
-              />
+            <TabsContent value="style" className="space-y-8 animate-in fade-in-50 slide-in-from-right-4 duration-700">
+              <div className="text-center mb-6 animate-in fade-in-0 slide-in-from-top-2 duration-500 delay-200">
+                <h2 className="text-2xl font-display font-semibold mb-2 bg-clip-text text-transparent bg-gradient-pet">
+                  选择您喜欢的画风
+                </h2>
+                <div className="w-20 h-1 bg-gradient-pet mx-auto mt-3 rounded-full"></div>
+              </div>
               
-              <FeatureSelector
-                selectedFeatures={selectedFeatures}
-                onFeaturesChange={handleFeaturesChange}
-                customFeatures={customFeatures}
-                onCustomFeaturesChange={handleCustomFeaturesChange}
-                additionalElements={additionalElements}
-                onAdditionalElementsChange={handleAdditionalElementsChange}
-              />
+              <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300">
+                <StyleSelector 
+                  selectedStyle={selectedStyle}
+                  onStyleSelect={handleStyleSelect}
+                  onStylePromptChange={handleStylePromptChange}
+                />
+              </div>
+              
+              <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-500">
+                <FeatureSelector
+                  selectedFeatures={selectedFeatures}
+                  onFeaturesChange={handleFeaturesChange}
+                  customFeatures={customFeatures}
+                  onCustomFeaturesChange={handleCustomFeaturesChange}
+                  additionalElements={additionalElements}
+                  onAdditionalElementsChange={handleAdditionalElementsChange}
+                />
+              </div>
               
               <div className="flex justify-between">
                 <Button 
@@ -388,12 +456,13 @@ const CreatePage = () => {
                 </Button>
                 
                 {currentResultImage && (
-                  <Link to="/checkout">
-                    <Button className="pet-button">
-                      前往支付
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
-                    </Button>
-                  </Link>
+                  <Button 
+                    className="pet-button"
+                    onClick={handleConfirm}
+                  >
+                    前往制作
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+                  </Button>
                 )}
               </div>
             </TabsContent>
@@ -403,9 +472,8 @@ const CreatePage = () => {
         {/* Usage Counter */}
         <div className="max-w-4xl mx-auto mt-12 p-4 bg-gray-50 rounded-xl">
           <p className="text-center text-sm text-gray-500">
-            您还有 <span className="font-bold text-pet-pink">5</span> 次免费生成次数 | 
             <Link to="/pricing" className="text-pet-pink ml-1 hover:underline">
-              升级会员获取更多
+              升级会员获取更多功能
             </Link>
           </p>
         </div>

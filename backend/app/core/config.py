@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api"
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
     
+    # MemFireDB 数据库配置
+    MEMFIREDB_URL: str = os.getenv("VITE_SUPABASE_URL", "")
+    MEMFIREDB_ANON_KEY: str = os.getenv("VITE_SUPABASE_ANON_KEY", "")
+    MEMFIREDB_SERVICE_ROLE_KEY: str = os.getenv("MEMFIREDB_SERVICE_ROLE_KEY", "")
+    
+    # Supabase JWT密钥（用于验证前端传来的token）
+    SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
+    
     # CORS设置
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",

@@ -53,13 +53,6 @@ const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: Gene
             </div>
           ) : resultImage ? (
             <div className="p-4">
-              {/* 添加调试信息显示 */}
-              <div className="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
-                <div>图片URL: {resultImage}</div>
-                <div>加载状态: {imageLoaded ? '已加载' : '未加载'}</div>
-                {imageError && <div className="text-red-600">错误: {imageError}</div>}
-              </div>
-              
               <div className="relative w-full aspect-square max-w-md mx-auto mb-4">
                 {imageError ? (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 rounded-lg">

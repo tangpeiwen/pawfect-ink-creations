@@ -82,4 +82,118 @@ class GenerationTask(BaseModel):
     resultUrl: Optional[str] = None
     error: Optional[str] = None
     createdAt: datetime = Field(default_factory=datetime.now)
-    updatedAt: datetime = Field(default_factory=datetime.now) 
+    updatedAt: datetime = Field(default_factory=datetime.now)
+
+# ==================== 数据库模型 ====================
+
+# 用户资料模型
+class UserProfileCreate(BaseModel):
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    subscription_tier: Literal['free', 'premium', 'pro'] = 'free'
+    credits_remaining: int = 10
+
+class UserProfileUpdate(BaseModel):
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    subscription_tier: Optional[Literal['free', 'premium', 'pro']] = None
+    credits_remaining: Optional[int] = None
+
+class UserProfile(BaseModel):
+    id: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    subscription_tier: str = 'free'
+    credits_remaining: int = 10
+    total_generations: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+# 上传图片模型
+class UploadedImageCreate(BaseModel):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    original_filename: str
+    file_size: int
+    mime_type: str
+    storage_path: str
+    preview_path: Optional[str] = None
+    upload_status: Literal['uploading', 'completed', 'failed'] = 'completed'
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class UploadedImageUpdate(BaseModel):
+    preview_path: Optional[str] = None
+    upload_status: Optional[Literal['uploading', 'completed', 'failed']] = None
+
+class UploadedImage(BaseModel):
+    id: str
+    user_id: str
+    original_filename: str
+    file_size: int
+    mime_type: str
+    storage_path: str
+    preview_path: Optional[str] = None
+    upload_status: str = 'completed'
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+# 生成任务模型
+class GenerationCreate(BaseModel):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    uploaded_image_id: str
+    style_id: str
+    emphasis_features: List[str] = Field(default_factory=list)
+    custom_features: List[str] = Field(default_factory=list)
+    additional_elements: List[str] = Field(default_factory=list)
+    status: Literal['pending', 'processing', 'completed', 'failed'] = 'pending'
+    progress: int = 0
+    title: Optional[str] = None
+
+class GenerationUpdate(BaseModel):
+    status: Optional[Literal['pending', 'processing', 'completed', 'failed']] = None
+    progress: Optional[int] = None
+    error_message: Optional[str] = None
+    title: Optional[str] = None
+    is_public: Optional[bool] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
+class Generation(BaseModel):
+    id: str
+    user_id: str
+    uploaded_image_id: str
+    style_id: str
+    emphasis_features: List[str] = Field(default_factory=list)
+    custom_features: List[str] = Field(default_factory=list)
+    additional_elements: List[str] = Field(default_factory=list)
+    status: str = 'pending'
+    progress: int = 0
+    error_message: Optional[str] = None
+    title: Optional[str] = None
+    is_public: bool = False
+    likes_count: int = 0
+    created_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+# 生成结果模型
+class GenerationResultCreate(BaseModel):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    generation_id: str
+    result_url: str
+    file_size: Optional[int] = None
+    image_analysis: Optional[str] = None
+    generation_prompt: Optional[str] = None
+    api_response_data: Dict[str, Any] = Field(default_factory=dict)
+
+class GenerationResult(BaseModel):
+    id: str
+    generation_id: str
+    result_url: str
+    file_size: Optional[int] = None
+    image_analysis: Optional[str] = None
+    generation_prompt: Optional[str] = None
+    api_response_data: Dict[str, Any] = Field(default_factory=dict)
+    is_selected: bool = False
+    created_at: datetime 

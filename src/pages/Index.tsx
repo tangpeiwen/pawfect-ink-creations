@@ -1,10 +1,67 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
-import { ArrowRight, Cat, PawPrint, Heart } from "lucide-react";
+import { ArrowRight, Cat, PawPrint, Heart, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import PixelTransition from "@/components/PixelTransition";
+import { useAuth } from "@/hooks/useAuth";
+
+// 认证状态相关的CTA按钮组件
+const AuthAwareCTA = ({ 
+  className = "", 
+  variant = "primary" 
+}: { 
+  className?: string; 
+  variant?: "primary" | "secondary" 
+}) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Button 
+        disabled 
+        className={`${variant === "primary" 
+          ? "bg-pet-pink/50" 
+          : "bg-black/50"} text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black ${className}`}
+      >
+        加载中...
+      </Button>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Link to="/create">
+        <Button className={`${variant === "primary" 
+          ? "bg-pet-pink hover:bg-pet-pink/90" 
+          : "bg-black hover:bg-gray-800"} text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] transition-all ${className}`}>
+          立即开始设计
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <Link to="/register">
+        <Button className={`${variant === "primary" 
+          ? "bg-pet-pink hover:bg-pet-pink/90" 
+          : "bg-black hover:bg-gray-800"} text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] transition-all ${className}`}>
+          立即注册开始
+          <UserPlus className="ml-2 h-5 w-5" />
+        </Button>
+      </Link>
+      <p className="text-sm text-gray-600">
+        已有账号？
+        <Link to="/sign-in" className="text-pet-pink hover:underline ml-1 font-medium">
+          直接登录
+        </Link>
+      </p>
+    </div>
+  );
+};
 
 const Hero = () => (
   <section className="py-16 md:py-20 relative">
@@ -12,10 +69,11 @@ const Hero = () => (
       <div className="bg-white relative rounded-[2rem] border-[6px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative z-10">
         <div className="grid md:grid-cols-2 gap-8">
           <div className="p-8 md:p-12 flex flex-col justify-center relative">
-            <img
-                src="/images/doodle-cat.svg"
-                className="right-[80px] top-[180px] w-[70px] z-40"
-              />
+            {/* <img
+              src="/images/doodle-cat.svg"
+              alt="装饰猫咪"
+              className="absolute right-[80px] top-[180px] w-[70px] z-40"
+            /> */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 text-black">
               和你的宠物永远在一起
             </h1>
@@ -29,16 +87,11 @@ const Hero = () => (
             />
             {/* <img
               src="/images/bikini_cat.svg"
-              className="absolute left-[1000px] -top-[150px] w-48 z-50" */}
-            {/* />  */}
+              className="absolute left-[1000px] -top-[150px] w-48 z-50"
+            /> */}
         
             <div>
-              <Link to="/create">
-                <Button className="bg-pet-pink hover:bg-pet-pink/90 text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all animate-pulse">
-                  立即开始设计
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
+              <AuthAwareCTA variant="primary" className="animate-pulse" />
             </div>
           </div>
           <div className="relative md:block hidden aspect-square">
@@ -159,12 +212,7 @@ const Features = () => {
         </div>
 
         <div className="mt-12 text-center relative z-10">
-          <Link to="/create">
-            <Button className="bg-black hover:bg-gray-800 text-white font-bold px-10 py-6 rounded-xl text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] transition-all">
-              立即开始设计
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          <AuthAwareCTA variant="secondary" />
         </div>
       </div>
     </section>

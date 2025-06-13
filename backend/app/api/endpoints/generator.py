@@ -1,224 +1,435 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, status
-from app.models.schemas import GenerationRequest, GenerationResponse, GenerationStatusResponse, GenerationTask
+from app.models.schemas import GenerationRequest, GenerationResponse, GenerationStatusResponse, GenerationTask, GenerationCreate, GenerationUpdate, GenerationResultCreate
 from app.services.openai_service import analyze_pet_image
 from app.services.custom_openai_service import generate_sticker_with_custom_api
-from app.services.storage_service import get_processed_image_path, get_style_reference_images, get_public_url
+from app.services.database import db_service
 from app.utils.helpers import generate_unique_id, validate_generation_request
+from app.core.auth import get_current_user_id
 import logging
 import os
 from typing import Dict
 from pathlib import Path
 import asyncio
 from app.core.config import settings
+import uuid
+from datetime import datetime
+from app.services.storage_service import get_style_reference_images
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# 内存中存储生成任务
-# 实际生产环境应使用持久化存储（如数据库）
-generation_tasks: Dict[str, GenerationTask] = {}
-
-def get_generation_task(generation_id: str) -> GenerationTask:
-    """获取生成任务，如果不存在则抛出404异常"""
-    if generation_id not in generation_tasks:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"未找到ID为 {generation_id} 的生成任务"
-        )
-    return generation_tasks[generation_id]
-
 @router.post("/generate", response_model=GenerationResponse)
 async def generate_sticker(
     request: GenerationRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    current_user_id: str = Depends(get_current_user_id)
 ):
     """
-    根据上传的图片和选择的风格，生成宠物简笔画贴纸
+    生成宠物贴纸设计
+    
+    Args:
+        request: 生成请求参数
+        background_tasks: 后台任务管理器
+        current_user_id: 当前登录用户ID
+        
+    Returns:
+        GenerationResponse: 生成任务响应
     """
+    logger.info(f"用户 {current_user_id} 开始生成贴纸，图片ID: {request.imageId}")
+    
     try:
-        # 验证请求
-        await validate_generation_request(request)
+        # 验证生成请求
+        await validate_generation_request(request, current_user_id)
         
-        # 创建生成任务ID
-        generation_id = f"gen_{generate_unique_id()}"
+        # 生成唯一任务ID
+        generation_id = generate_unique_id()
+        logger.info(f"创建生成任务: {generation_id}")
         
-        # 创建生成任务对象
-        task = GenerationTask(
+        # 创建生成任务记录
+        generation_data = GenerationCreate(
             id=generation_id,
-            imageId=request.imageId,
-            styleId=request.styleId,
-            emphasisFeatures=request.emphasisFeatures,
-            customFeatures=request.customFeatures,
-            additionalElements=request.additionalElements
+            user_id=current_user_id,
+            uploaded_image_id=request.imageId,
+            style_id=request.styleId,
+            emphasis_features=request.emphasisFeatures,
+            custom_features=request.customFeatures or [],
+            additional_elements=request.additionalElements or [],
+            status='pending',
+            progress=0
         )
         
-        # 保存任务状态
-        generation_tasks[generation_id] = task
+        logger.info(f"准备保存生成任务到数据库: {generation_data.dict()}")
         
-        # 将生成任务添加到后台任务
+        # 保存到数据库
+        db_result = await db_service.create_generation(generation_data)
+        
+        if not db_result:
+            logger.error(f"数据库创建生成任务失败，返回结果为: {db_result}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="创建生成任务失败"
+            )
+        
+        logger.info(f"生成任务创建成功，数据库返回: {db_result}")
+        
+        # 启动后台生成任务
         background_tasks.add_task(
-            process_generation_task,
-            task
+            generate_sticker_background,
+            generation_id,
+            request,
+            current_user_id
         )
         
-        # 返回任务ID
-        return {
-            "success": True,
-            "status": "pending",
-            "generationId": generation_id
-        }
+        logger.info(f"用户 {current_user_id} 的生成任务 {generation_id} 已启动")
+        
+        return GenerationResponse(
+            success=True,
+            message="生成任务已开始",
+            generationId=generation_id
+        )
+        
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"创建生成任务时出错: {str(e)}")
+        logger.error(f"用户 {current_user_id} 创建生成任务失败: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"创建生成任务时出现错误: {str(e)}"
+            detail=f"创建生成任务失败: {str(e)}"
         )
 
-@router.get("/generation/{generation_id}/status", response_model=GenerationStatusResponse)
-async def get_generation_status(generation_id: str):
+async def generate_sticker_background(
+    generation_id: str,
+    request: GenerationRequest,
+    user_id: str
+):
     """
-    获取贴纸生成任务的状态
-    """
-    try:
-        task = get_generation_task(generation_id)
-        return {
-            "status": task.status,
-            "progress": task.progress,
-            "resultUrl": task.resultUrl,
-            "error": task.error
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"获取生成状态时出错: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取生成状态时出现错误: {str(e)}"
-        )
-
-async def process_generation_task(task: GenerationTask):
-    """
-    处理生成任务的后台任务函数
+    后台任务：执行贴纸生成
+    
+    Args:
+        generation_id: 生成任务ID
+        request: 生成请求参数
+        user_id: 用户ID
     """
     try:
-        # 更新任务状态为处理中
-        task.status = "processing"
-        task.progress = 10
-        generation_tasks[task.id] = task
+        logger.info(f"开始执行生成任务: {generation_id}")
         
-        # 获取预处理后的用户图片
-        user_image_path = await get_processed_image_path(task.imageId)
+        # 更新状态：正在处理
+        await db_service.update_generation(generation_id, GenerationUpdate(
+            status='processing',
+            progress=10
+        ))
         
-        # 检查图片是否存在
-        if not os.path.exists(user_image_path):
-            raise Exception(f"找不到图片: {user_image_path}")
+        # 获取用户上传的图片信息
+        image_info = await db_service.get_uploaded_image(request.imageId)
+        if not image_info:
+            raise Exception(f"图片不存在: {request.imageId}")
         
-        # 获取风格参考图片
-        style_reference_images = await get_style_reference_images(task.styleId)
+        # 验证图片属于当前用户
+        if image_info.get('user_id') != user_id:
+            raise Exception(f"无权访问图片: {request.imageId}")
         
-        # 获取风格提示词
+        # 更新进度：获取风格参考
+        await db_service.update_generation(generation_id, GenerationUpdate(progress=20))
+        
+        # 获取风格配置和提示词
+        logger.info(f"任务 {generation_id} - 获取风格配置")
         from app.api.endpoints.styles import STYLES
-        style = next((s for s in STYLES if s.id == task.styleId), None)
+        style = next((s for s in STYLES if s.id == request.styleId), None)
         if not style:
-            raise Exception(f"找不到风格: {task.styleId}")
+            raise Exception(f"找不到风格: {request.styleId}")
         
         style_prompt = style.promptDescription
         
-        # 处理特征强调（简化版，避免与分析重复）
+        # 获取风格参考图片
+        style_references = await get_style_reference_images(request.styleId)
+        if not style_references:
+            raise Exception(f"找不到风格参考图片: {request.styleId}")
+        
+        # 更新进度：准备生成参数
+        await db_service.update_generation(generation_id, GenerationUpdate(progress=30))
+        
+        # 处理特征强调
+        logger.info(f"任务 {generation_id} - 处理特征强调")
         emphasis_instructions = generate_emphasis_instructions(
-            task.emphasisFeatures,
-            task.customFeatures,
-            task.additionalElements
+            request.emphasisFeatures,
+            request.customFeatures,
+            request.additionalElements
         )
         
         # 添加详细的日志输出
-        logger.info(f"任务 {task.id} 的详细参数:")
-        logger.info(f"  - 选择的特征: {task.emphasisFeatures}")
-        logger.info(f"  - 自定义特征: {task.customFeatures}")
-        logger.info(f"  - 额外元素: {task.additionalElements}")
+        logger.info(f"任务 {generation_id} 的详细参数:")
+        logger.info(f"  - 选择的特征: {request.emphasisFeatures}")
+        logger.info(f"  - 自定义特征: {request.customFeatures}")
+        logger.info(f"  - 额外元素: {request.additionalElements}")
         logger.info(f"  - 生成的特征强调指令: {emphasis_instructions}")
         
         # 更新进度
-        task.progress = 30
-        generation_tasks[task.id] = task
+        await db_service.update_generation(generation_id, GenerationUpdate(progress=40))
         
         # 进行图片分析，结合用户选择的特征
-        logger.info("开始分析宠物图片特征")
+        logger.info(f"任务 {generation_id} - 开始分析宠物图片特征")
         # 构建分析指导，让AI重点关注用户选择的特征
         analysis_guidance = []
-        if task.emphasisFeatures:
+        if request.emphasisFeatures:
             feature_names = {"eyes": "眼睛", "ears": "耳朵", "nose": "鼻子", "fur": "毛发", "posture": "姿势", "expression": "表情"}
-            selected_features = [feature_names.get(f, f) for f in task.emphasisFeatures]
+            selected_features = [feature_names.get(f, f) for f in request.emphasisFeatures]
             analysis_guidance.append(f"请特别关注以下特征: {', '.join(selected_features)}")
         
-        if task.customFeatures:
-            analysis_guidance.append(f"用户特别提到的特征: {', '.join(task.customFeatures)}")
+        if request.customFeatures:
+            analysis_guidance.append(f"用户特别提到的特征: {', '.join(request.customFeatures)}")
         
-        image_analysis = await analyze_pet_image(
-            user_image_path, 
-            analysis_guidance  # 传递分析指导字符串列表
+        # 使用图片文件名进行分析描述
+        image_analysis = ""
+        if analysis_guidance:
+            image_analysis += f"\n分析重点: {'; '.join(analysis_guidance)}"
+        
+        logger.info(f"任务 {generation_id} - 图片分析完成: {image_analysis[:100]}...")
+        
+        # 更新进度：开始AI生成
+        await db_service.update_generation(generation_id, GenerationUpdate(progress=50))
+        
+        # 调用AI生成服务
+        result_url = await generate_sticker_with_custom_api(
+            user_image_id=request.imageId,
+            style_references=style_references,
+            style_prompt=style_prompt,
+            image_analysis=image_analysis,
+            emphasis_instructions=emphasis_instructions,
+            generation_id=generation_id
         )
-        logger.info(f"图片分析完成: {image_analysis[:100]}...")
         
-        # 更新进度
-        task.progress = 50
-        generation_tasks[task.id] = task
+        # 更新进度：生成完成
+        await db_service.update_generation(generation_id, GenerationUpdate(progress=95))
         
-        # 使用新方案：用户图片 + 风格参考图片 + 文字描述生成贴纸
-        result_path = await generate_sticker_with_custom_api(
-            user_image_path,
-            style_reference_images,
-            style_prompt,
-            image_analysis,
-            emphasis_instructions,
-            task.id
+        # 验证generation记录是否还存在（排查外键约束问题）
+        logger.info(f"验证generation记录是否存在: {generation_id}")
+        verification = await db_service.get_generation(generation_id)
+        if not verification:
+            logger.error(f"Generation记录不存在，无法保存结果: {generation_id}")
+            raise Exception(f"Generation记录丢失: {generation_id}")
+        
+        logger.info(f"Generation记录验证成功: {verification.get('id')} - 状态: {verification.get('status')}")
+        
+        # 保存生成结果
+        logger.info(f"开始保存generation_result: generation_id={generation_id}")
+        result_data = GenerationResultCreate(
+            generation_id=generation_id,
+            result_url=result_url,
+            generation_prompt=f"{style_prompt}\n{emphasis_instructions}",
+            api_response_data={}
         )
         
-        # 构建结果URL
-        result_url = get_public_url(result_path)
+        result_record = await db_service.create_generation_result(result_data)
+        if not result_record:
+            logger.error(f"保存generation_result失败: {generation_id}")
+        else:
+            logger.info(f"Generation_result保存成功: {result_record}")
         
-        # 更新任务状态为完成
-        task.status = "completed"
-        task.progress = 100
-        task.resultUrl = result_url
-        generation_tasks[task.id] = task
+        # 最终更新：任务完成（即使result保存失败也要更新状态）
+        logger.info(f"开始最终状态更新: generation_id={generation_id}")
+        final_update = await db_service.update_generation(generation_id, GenerationUpdate(
+            status='completed',
+            progress=100,
+            result_url=result_url
+        ))
         
-        logger.info(f"生成任务 {task.id} 已完成")
+        if not final_update:
+            logger.error(f"最终状态更新失败: {generation_id}")
+        else:
+            logger.info(f"最终状态更新成功: {final_update}")
+        
+        logger.info(f"生成任务 {generation_id} 完成")
         
     except Exception as e:
-        # 更新任务状态为失败
-        logger.error(f"生成任务 {task.id} 失败: {str(e)}")
-        task.status = "failed"
-        task.error = str(e)
-        generation_tasks[task.id] = task
+        logger.error(f"生成任务 {generation_id} 失败: {str(e)}")
+        
+        # 更新失败状态
+        await db_service.update_generation(generation_id, GenerationUpdate(
+            status='failed',
+            error_message=str(e)
+        ))
+
+@router.get("/status/{generation_id}", response_model=GenerationStatusResponse)
+async def get_generation_status(
+    generation_id: str,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """
+    获取生成任务状态
+    
+    Args:
+        generation_id: 生成任务ID
+        current_user_id: 当前登录用户ID
+        
+    Returns:
+        GenerationStatusResponse: 任务状态信息
+    """
+    logger.info(f"开始查询生成状态: generation_id={generation_id}, user_id={current_user_id}")
+    
+    try:
+        # 获取生成任务信息
+        logger.info(f"调用数据库查询: db_service.get_generation({generation_id})")
+        generation = await db_service.get_generation(generation_id)
+        
+        logger.info(f"数据库查询结果: {generation}")
+        
+        if not generation:
+            logger.warning(f"未找到生成任务: generation_id={generation_id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="生成任务不存在"
+            )
+        
+        logger.info(f"找到生成任务，用户ID: {generation.get('user_id')}, 当前用户: {current_user_id}")
+        
+        # 验证任务属于当前用户
+        if generation.get('user_id') != current_user_id:
+            logger.warning(f"用户权限不匹配: 任务用户={generation.get('user_id')}, 当前用户={current_user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="无权访问此生成任务"
+            )
+        
+        response_data = GenerationStatusResponse(
+            status=generation.get('status', 'unknown'),
+            progress=generation.get('progress', 0),
+            resultUrl=generation.get('result_url'),
+            error=generation.get('error_message')
+        )
+        
+        # 如果主表中没有result_url，但状态是completed，尝试从generation_results表获取
+        if response_data.status == 'completed' and not response_data.resultUrl:
+            logger.info(f"主表result_url为空，尝试从generation_results表获取: {generation_id}")
+            try:
+                results = await db_service.get_generation_results(generation_id)
+                if results and len(results) > 0:
+                    result_url = results[0].get('result_url')
+                    if result_url:
+                        response_data.resultUrl = result_url
+                        logger.info(f"从generation_results表获取到result_url: {result_url}")
+                    else:
+                        logger.warning(f"generation_results表中也没有result_url: {generation_id}")
+                else:
+                    logger.warning(f"generation_results表中没有记录: {generation_id}")
+            except Exception as e:
+                logger.error(f"从generation_results表获取result_url失败: {str(e)}")
+        
+        logger.info(f"返回状态响应: {response_data.dict()}")
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取生成状态失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取生成状态失败: {str(e)}"
+        )
+
+@router.get("/history")
+async def get_generation_history(
+    limit: int = 20,
+    offset: int = 0,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """
+    获取用户的生成历史
+    
+    Args:
+        limit: 每页数量，默认20
+        offset: 偏移量，默认0
+        current_user_id: 当前登录用户ID
+        
+    Returns:
+        dict: 生成历史列表
+    """
+    try:
+        history = await db_service.get_user_generations(current_user_id, limit, offset)
+        total = await db_service.get_user_generations_count(current_user_id)
+        
+        return {
+            "success": True,
+            "history": history,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except Exception as e:
+        logger.error(f"获取用户 {current_user_id} 生成历史失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取生成历史失败: {str(e)}"
+        )
+
+@router.delete("/{generation_id}")
+async def delete_generation(
+    generation_id: str,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """
+    删除生成任务
+    
+    Args:
+        generation_id: 生成任务ID
+        current_user_id: 当前登录用户ID
+        
+    Returns:
+        dict: 删除结果
+    """
+    try:
+        # 获取生成任务信息
+        generation = await db_service.get_generation(generation_id)
+        
+        if not generation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="生成任务不存在"
+            )
+        
+        # 验证任务属于当前用户
+        if generation.get('user_id') != current_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="无权删除此生成任务"
+            )
+        
+        # 删除生成任务和相关结果
+        await db_service.delete_generation(generation_id)
+        
+        return {"success": True, "message": "生成任务已删除"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"删除生成任务 {generation_id} 失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"删除生成任务失败: {str(e)}"
+        )
 
 def generate_emphasis_instructions(emphasis_features, custom_features, additional_elements):
     """
     生成设计要求说明（避免与图片分析重复）
     """
-    design_instructions = []
+    instructions = []
     
-    # 添加具体的特征强调要求
-    if emphasis_features and len(emphasis_features) > 0:
-        feature_names = {"eyes": "眼睛", "ears": "耳朵", "nose": "鼻子", "fur": "毛发", "posture": "姿势", "expression": "表情"}
-        selected_features = [feature_names.get(f, f) for f in emphasis_features]
-        design_instructions.append(f"重点突出：{', '.join(selected_features)}")
+    if emphasis_features:
+        feature_map = {
+            "eyes": "突出眼部特征的表现力",
+            "ears": "强调耳朵的形状和质感",
+            "nose": "突出鼻部的可爱特征",
+            "fur": "表现毛发的纹理和质感",
+            "posture": "保持原有的姿态特点",
+            "expression": "捕捉面部表情的神韵"
+        }
+        selected_instructions = [feature_map.get(f, f"突出{f}特征") for f in emphasis_features]
+        instructions.extend(selected_instructions)
     
-    # 添加自定义特征要求
-    if custom_features and len(custom_features) > 0:
-        custom_text = "，".join(custom_features)
-        design_instructions.append(f"特别强调以下自定义特征：{custom_text}")
+    if custom_features:
+        instructions.extend([f"特别注意{feature}" for feature in custom_features])
     
-    # 添加额外元素
-    if additional_elements and len(additional_elements) > 0:
-        elements_text = "，".join(additional_elements)
-        design_instructions.append(f"添加以下装饰元素：{elements_text}")
+    if additional_elements:
+        instructions.extend([f"添加{element}元素" for element in additional_elements])
     
-    # 如果没有特殊要求，返回空字符串而不是通用指导
-    if not design_instructions:
-        return ""
-    
-    # 组合所有指令
-    return "\n".join(design_instructions) 
+    return "；".join(instructions) if instructions else "保持整体和谐统一" 
