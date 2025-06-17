@@ -19,10 +19,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# 设置CORS - 临时允许所有源访问，用于开发测试
+# 设置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有源访问，用于开发环境
+    allow_origins=settings.get_allowed_origins(),  # 使用动态配置的允许源
     allow_credentials=True,
     allow_methods=["*"],  # 允许所有HTTP方法
     allow_headers=["*"],  # 允许所有HTTP头

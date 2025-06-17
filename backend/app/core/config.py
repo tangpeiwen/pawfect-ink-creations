@@ -23,12 +23,27 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
     
     # CORS设置
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",  # Vite默认端口
-        "http://localhost:8080",  # 添加前端运行的端口
-        os.getenv("FRONTEND_URL", "")
-    ]
+    def get_allowed_origins(self) -> List[str]:
+        """动态获取允许的CORS源"""
+        origins = [
+            "http://localhost:3000",
+            "http://localhost:5173",  # Vite默认端口
+            "http://localhost:8080",  # 前端运行的端口
+        ]
+        
+        # 添加前端域名
+        if self.FRONTEND_DOMAIN:
+            origins.append(self.FRONTEND_DOMAIN)
+        
+        # 添加额外的允许域名
+        extra_origins = os.getenv("EXTRA_ALLOWED_ORIGINS", "")
+        if extra_origins:
+            origins.extend([origin.strip() for origin in extra_origins.split(",")])
+        
+        # 去重并过滤空值
+        return list(set(filter(None, origins)))
+    
+    ALLOWED_ORIGINS: List[str] = []  # 初始化为空，通过get_allowed_origins()获取
     
     # 文件存储路径
     BASE_DIR: Path = Path(__file__).parents[2]
@@ -62,6 +77,15 @@ class Settings(BaseSettings):
     
     # 任务配置
     TASK_EXPIRY_HOURS: int = 24
+    
+    # 支付配置
+    PAYMENT_DOMAIN: str = os.getenv("PAYMENT_DOMAIN", "http://localhost:3000")  # 开发环境用3000，生产环境通过环境变量设置
+    FRONTEND_DOMAIN: str = os.getenv("FRONTEND_DOMAIN", "http://localhost:8080")  # 前端页面地址
+    
+    # Zpay支付配置
+    ZPAY_PID: str = os.getenv("ZPAY_PID", "")
+    ZPAY_PKEY: str = os.getenv("ZPAY_PKEY", "")
+    ZPAY_API_URL: str = os.getenv("ZPAY_API_URL", "https://zpayz.cn")
     
     class Config:
         env_file = ".env"

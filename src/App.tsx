@@ -10,6 +10,7 @@ import NotFound from './pages/NotFound';
 import AuthPage from './pages/AuthPage';
 import RegisterPage from './pages/RegisterPage';
 import AuthCallback from './pages/AuthCallback';
+import PaymentResult from './pages/PaymentResult';
 import { Toaster } from './components/ui/toaster';
 
 // 创建一个基本应用
@@ -25,6 +26,7 @@ function App() {
           <Route path="/sign-in" element={<AuthPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/payment/result" element={<PaymentResult />} />
           {/* 受保护的路由 - 需要登录才能访问 */}
           <Route 
             path="/create" 

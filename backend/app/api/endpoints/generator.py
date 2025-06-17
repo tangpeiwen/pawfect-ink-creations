@@ -240,6 +240,21 @@ async def generate_sticker_background(
         
         logger.info(f"生成任务 {generation_id} 完成")
         
+        # 生成任务完成后扣除token
+        try:
+            # 扣除200 token
+            await db_service.consume_tokens(
+                user_id=user_id,
+                amount=200,
+                description=f"生成图片: {generation_id}",
+                generation_id=generation_id
+            )
+            logger.info(f"用户 {user_id} 成功扣除200 token用于生成任务 {generation_id}")
+        except Exception as e:
+            logger.error(f"扣除token失败: {str(e)}")
+            # 即使扣除token失败，也不影响生成结果
+            pass
+        
     except Exception as e:
         logger.error(f"生成任务 {generation_id} 失败: {str(e)}")
         

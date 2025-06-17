@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import upload, styles, features, generator, database, users
+from app.api.endpoints import upload, styles, features, generator, database, users, orders
 
 # 创建主API路由
 api_router = APIRouter()
@@ -10,4 +10,5 @@ api_router.include_router(styles.router, tags=["风格"])
 api_router.include_router(features.router, tags=["特征"])
 api_router.include_router(generator.router, tags=["生成"])
 api_router.include_router(users.router, prefix="/users", tags=["用户"])
-api_router.include_router(database.router, prefix="/database", tags=["数据库"]) 
+api_router.include_router(database.router, prefix="/database", tags=["数据库"])
+api_router.include_router(orders.router, prefix="/orders", tags=["订单"]) 

@@ -35,7 +35,7 @@ async def sync_user_profile(request: UserProfileSyncRequest):
         profile_data = UserProfileCreate(
             display_name=request.display_name or request.email.split('@')[0],
             subscription_tier='free',
-            credits_remaining=10
+            tokens_remaining=500
         )
         
         result = await db_service.create_user_profile(request.user_id, profile_data)
@@ -200,7 +200,7 @@ async def get_user_stats(current_user_id: str = Depends(get_current_user_id)):
             "stats": {
                 "total_images": total_images,
                 "total_generations": total_generations,
-                "credits_remaining": profile.get('credits_remaining', 0),
+                "tokens_remaining": profile.get('tokens_remaining', 0),
                 "subscription_tier": profile.get('subscription_tier', 'free'),
                 "recent_generations": recent_generations
             }
@@ -245,7 +245,7 @@ async def consume_credits(
                 detail="用户资料不存在"
             )
         
-        current_credits = profile.get('credits_remaining', 0)
+        current_credits = profile.get('tokens_remaining', 0)
         if current_credits < credits_to_consume:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -254,7 +254,7 @@ async def consume_credits(
         
         # 消费积分
         new_credits = current_credits - credits_to_consume
-        update_data = UserProfileUpdate(credits_remaining=new_credits)
+        update_data = UserProfileUpdate(tokens_remaining=new_credits)
         
         result = await db_service.update_user_profile(current_user_id, update_data)
         
@@ -263,7 +263,7 @@ async def consume_credits(
             return {
                 "success": True,
                 "message": f"成功消费 {credits_to_consume} 积分",
-                "credits_remaining": new_credits
+                "tokens_remaining": new_credits
             }
         else:
             raise HTTPException(

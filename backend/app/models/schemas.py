@@ -91,20 +91,20 @@ class UserProfileCreate(BaseModel):
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
     subscription_tier: Literal['free', 'premium', 'pro'] = 'free'
-    credits_remaining: int = 10
+    tokens_remaining: int = 500
 
 class UserProfileUpdate(BaseModel):
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
     subscription_tier: Optional[Literal['free', 'premium', 'pro']] = None
-    credits_remaining: Optional[int] = None
+    tokens_remaining: Optional[int] = None
 
 class UserProfile(BaseModel):
     id: str
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
     subscription_tier: str = 'free'
-    credits_remaining: int = 10
+    tokens_remaining: int = 500
     total_generations: int = 0
     created_at: datetime
     updated_at: datetime
@@ -196,4 +196,44 @@ class GenerationResult(BaseModel):
     generation_prompt: Optional[str] = None
     api_response_data: Dict[str, Any] = Field(default_factory=dict)
     is_selected: bool = False
-    created_at: datetime 
+    created_at: datetime
+
+class OrderCreate(BaseModel):
+    package_id: str
+
+class OrderResponse(BaseModel):
+    id: str
+    user_id: str
+    package_id: str
+    amount: int
+    token_amount: int
+    status: str
+    payment_method: Optional[str] = None
+    payment_id: Optional[str] = None
+    extra: Optional[Dict] = None
+    created_at: datetime
+    paid_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+
+class OrderCreateResponse(BaseModel):
+    """订单创建响应，包含支付信息"""
+    id: str
+    user_id: str
+    package_id: str
+    amount: int
+    token_amount: int
+    status: str
+    payment_method: Optional[str] = None
+    payment_id: Optional[str] = None
+    extra: Optional[Dict] = None
+    created_at: datetime
+    paid_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    
+    # 支付相关字段（PC端）
+    pay_url: Optional[str] = None
+    qr_code: Optional[str] = None
+    qr_img: Optional[str] = None
+    
+    # 支付表单（移动端）
+    payment_form: Optional[Dict] = None 
