@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DatabaseClient:
-    """MemFireDB 数据库客户端"""
+    """Supabase 数据库客户端"""
     
     def __init__(self):
         self._client: Client = None
@@ -15,14 +15,14 @@ class DatabaseClient:
     def client(self) -> Client:
         """获取普通客户端（使用匿名密钥）"""
         if self._client is None:
-            if not settings.MEMFIREDB_URL or not settings.MEMFIREDB_ANON_KEY:
-                raise ValueError("Missing MemFireDB configuration")
+            if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+                raise ValueError("Missing Supabase configuration")
             
             self._client = create_client(
-                settings.MEMFIREDB_URL,
-                settings.MEMFIREDB_ANON_KEY
+                settings.SUPABASE_URL,
+                settings.SUPABASE_ANON_KEY
             )
-            logger.info("MemFireDB client initialized")
+            logger.info("Supabase client initialized")
         
         return self._client
     
@@ -30,14 +30,14 @@ class DatabaseClient:
     def admin_client(self) -> Client:
         """获取管理员客户端（使用服务角色密钥）"""
         if self._admin_client is None:
-            if not settings.MEMFIREDB_URL or not settings.MEMFIREDB_SERVICE_ROLE_KEY:
-                raise ValueError("Missing MemFireDB admin configuration")
+            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
+                raise ValueError("Missing Supabase admin configuration")
             
             self._admin_client = create_client(
-                settings.MEMFIREDB_URL,
-                settings.MEMFIREDB_SERVICE_ROLE_KEY
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY
             )
-            logger.info("MemFireDB admin client initialized")
+            logger.info("Supabase admin client initialized")
         
         return self._admin_client
     

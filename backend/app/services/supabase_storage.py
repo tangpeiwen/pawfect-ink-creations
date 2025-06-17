@@ -13,7 +13,7 @@ class SupabaseStorageService:
     
     def __init__(self):
         self.client = get_db_client()
-        self.bucket_name = "pawfect_images"  # 存储桶名称
+        self.bucket_name = "pawfect-images"  # 存储桶名称
     
     async def upload_user_image(self, file_content: bytes, file_extension: str = "jpg") -> tuple[str, str]:
         """
@@ -31,7 +31,8 @@ class SupabaseStorageService:
             file_id = str(uuid.uuid4())
             file_path = f"upload/{file_id}.{file_extension}"
             
-            logger.info(f"准备上传文件到路径: {file_path}")
+            # logger.info(f"准备上传文件到路径: {file_path}")
+            # logger.info(f"使用的存储桶名称: {self.bucket_name}")
             
             # 上传到Supabase Storage
             response = self.client.storage.from_(self.bucket_name).upload(
@@ -40,7 +41,7 @@ class SupabaseStorageService:
                 file_options={"content-type": f"image/{file_extension}"}
             )
             
-            logger.info(f"上传响应: {response}")
+            # logger.info(f"上传响应: {response}")
             
             # 检查Supabase响应是否有错误
             if hasattr(response, 'error') and response.error:

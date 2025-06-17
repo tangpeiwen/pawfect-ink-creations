@@ -331,5 +331,131 @@ class DatabaseService:
             # 不要抛出异常，因为订单已经成功更新了
             print(f"[DEBUG] 注意：积分更新失败，但订单状态已成功更新为paid")
 
+    async def consume_tokens(self, user_id: str, amount: int, description: str, generation_id: Optional[str] = None) -> bool:
+        """消耗用户token（生成任务完成后调用）"""
+        try:
+            logger.info(f"开始消耗用户Token: user_id={user_id}, amount={amount}")
+            
+            # 获取用户当前token
+            user_profile = await self.get_user_profile(user_id)
+            if not user_profile:
+                logger.error(f"用户 {user_id} 不存在")
+                return False
+            
+            current_tokens = user_profile.get('tokens_remaining', 0)
+            if current_tokens < amount:
+                logger.error(f"用户 {user_id} token不足: 当前 {current_tokens}, 需要 {amount}")
+                return False
+            
+            # 扣除token
+            new_tokens = current_tokens - amount
+            
+            # 更新用户token余额
+            update_response = self.client.table('user_profiles').update({
+                'tokens_remaining': new_tokens
+            }).eq('id', user_id).execute()
+            
+            if not update_response.data:
+                logger.error(f"更新用户token余额失败: {user_id}")
+                return False
+            
+            # 记录token消耗交易
+            transaction_data = {
+                'user_id': user_id,
+                'amount': -amount,  # 负数表示消耗
+                'description': description,
+                'generation_id': generation_id,
+                'transaction_type': 'consumption'
+            }
+            
+            try:
+                transaction_response = self.client.table('token_transactions').insert(transaction_data).execute()
+                logger.info(f"Token消耗交易记录创建成功: {len(transaction_response.data) > 0}")
+            except Exception as trans_error:
+                logger.error(f"创建消耗交易记录失败（但token已扣除）: {trans_error}")
+                # 交易记录创建失败不影响token扣除
+            
+            logger.info(f"用户 {user_id} 成功消耗 {amount} tokens，当前余额: {new_tokens}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"消耗用户token失败: {e}")
+            return False
+
+    # ==================== 生成数量统计相关操作 ====================
+    
+    async def get_user_generations_count(self, user_id: str) -> int:
+        """获取用户生成数量"""
+        try:
+            response = self.client.table('generations').select('id', count='exact').eq('user_id', user_id).eq('status', 'completed').execute()
+            return response.count or 0
+        except Exception as e:
+            logger.error(f"Error getting user generations count: {e}")
+            return 0
+
+    async def get_user_images_count(self, user_id: str) -> int:
+        """获取用户上传图片数量"""
+        try:
+            response = self.client.table('uploaded_images').select('id', count='exact').eq('user_id', user_id).execute()
+            return response.count or 0
+        except Exception as e:
+            logger.error(f"Error getting user images count: {e}")
+            return 0
+
+    # ==================== 调试相关操作 ====================
+    
+    async def debug_user_generations(self, user_id: str) -> Dict[str, Any]:
+        """调试用户生成任务状态"""
+        try:
+            # 获取所有生成任务
+            all_generations = await self.get_user_generations(user_id, limit=100)
+            
+            # 统计各种状态的数量
+            status_counts = {}
+            for gen in all_generations:
+                status = gen.get('status', 'unknown')
+                status_counts[status] = status_counts.get(status, 0) + 1
+            
+            # 获取完成的生成任务数量
+            completed_count = status_counts.get('completed', 0)
+            
+            # 获取用户资料中的total_generations
+            user_profile = await self.get_user_profile(user_id)
+            current_total = user_profile.get('total_generations', 0) if user_profile else 0
+            
+            return {
+                'user_id': user_id,
+                'status_counts': status_counts,
+                'completed_generations': completed_count,
+                'current_total_generations': current_total,
+                'mismatch': completed_count != current_total,
+                'all_generations': all_generations[:5]  # 只返回前5个用于检查
+            }
+        except Exception as e:
+            logger.error(f"Error debugging user generations: {e}")
+            return {'error': str(e)}
+
+    async def fix_user_total_generations(self, user_id: str) -> bool:
+        """修复用户的total_generations计数"""
+        try:
+            # 获取实际完成的生成任务数量
+            completed_count = await self.get_user_generations_count(user_id)
+            
+            # 更新用户资料中的total_generations
+            update_response = self.client.table('user_profiles').update({
+                'total_generations': completed_count
+            }).eq('id', user_id).execute()
+            
+            if update_response.data:
+                logger.info(f"成功修复用户 {user_id} 的total_generations为 {completed_count}")
+                return True
+            else:
+                logger.error(f"修复用户 {user_id} 的total_generations失败")
+                return False
+                
+        except Exception as e:
+            logger.error(f"修复用户total_generations失败: {e}")
+            return False
+
 # 创建全局数据库服务实例
 db_service = DatabaseService() 

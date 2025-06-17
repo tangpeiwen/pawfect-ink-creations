@@ -319,4 +319,61 @@ async def delete_user_account(current_user_id: str = Depends(get_current_user_id
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"删除账号失败: {str(e)}"
+        )
+
+@router.get("/debug/generations")
+async def debug_user_generations(current_user_id: str = Depends(get_current_user_id)):
+    """
+    调试用户生成任务状态
+    
+    Args:
+        current_user_id: 当前登录用户ID
+        
+    Returns:
+        dict: 调试信息
+    """
+    try:
+        debug_info = await db_service.debug_user_generations(current_user_id)
+        return {
+            "success": True,
+            "debug_info": debug_info
+        }
+        
+    except Exception as e:
+        logger.error(f"调试用户生成任务失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"调试失败: {str(e)}"
+        )
+
+@router.post("/fix/total-generations")
+async def fix_user_total_generations(current_user_id: str = Depends(get_current_user_id)):
+    """
+    修复用户的total_generations计数
+    
+    Args:
+        current_user_id: 当前登录用户ID
+        
+    Returns:
+        dict: 修复结果
+    """
+    try:
+        success = await db_service.fix_user_total_generations(current_user_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": "total_generations修复成功"
+            }
+        else:
+            return {
+                "success": False,
+                "message": "total_generations修复失败"
+            }
+        
+    except Exception as e:
+        logger.error(f"修复用户total_generations失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"修复失败: {str(e)}"
         ) 
