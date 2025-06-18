@@ -13,7 +13,7 @@ import { generateSticker, checkGenerationStatus, uploadImage } from '@/lib/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
 const CreatePage = () => {
   const navigate = useNavigate();
@@ -36,6 +36,22 @@ const CreatePage = () => {
   // 添加生成进度状态
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [generationStatus, setGenerationStatus] = useState<string>("");
+  
+  // 添加Token不足对话框状态
+  const [showTokenDialog, setShowTokenDialog] = useState<boolean>(false);
+  const [tokenErrorMessage, setTokenErrorMessage] = useState<string>("");
+
+  // 处理Token不足的情况
+  const handleTokenInsufficient = (errorMessage: string) => {
+    setTokenErrorMessage(errorMessage);
+    setShowTokenDialog(true);
+  };
+
+  // 跳转到充值页面
+  const goToPricing = () => {
+    setShowTokenDialog(false);
+    navigate('/pricing');
+  };
 
   const handleImageUpload = async (file: File) => {
     setUploadedImage(file);
@@ -132,17 +148,12 @@ const CreatePage = () => {
         
         // 显示错误信息，特别关注Token不足的情况
         const errorMessage = result.message || '生成请求失败';
+        console.log('生成失败，错误信息:', errorMessage);
         
         // 检查是否是Token不足的错误
         if (errorMessage.includes('Token不足')) {
-          // 显示Token不足的错误，并提供充值链接
-          toast.error(errorMessage, {
-            action: {
-              label: '前往充值',
-              onClick: () => navigate('/pricing')
-            },
-            duration: 10000  // 显示10秒
-          });
+          // 使用模态对话框显示Token不足错误
+          handleTokenInsufficient(errorMessage);
         } else {
           // 显示其他错误
           toast.error(errorMessage);
@@ -223,15 +234,12 @@ const CreatePage = () => {
                 
                 // 检查是否是Token不足的错误
                 const errorMessage = statusResult.error || '未知错误';
+                console.log('生成状态检查失败，错误信息:', errorMessage);
+                
+                // 检查是否是Token不足的错误
                 if (errorMessage.includes('Token不足')) {
-                  // 显示Token不足的错误，并提供充值链接
-                  toast.error(errorMessage, {
-                    action: {
-                      label: '前往充值',
-                      onClick: () => navigate('/pricing')
-                    },
-                    duration: 10000  // 显示10秒
-                  });
+                  // 使用模态对话框显示Token不足错误
+                  handleTokenInsufficient(errorMessage);
                 } else {
                   // 显示其他错误
                   toast.error(`生成失败: ${errorMessage}`);
@@ -335,6 +343,36 @@ const CreatePage = () => {
               通过以下步骤，让AI将您的宠物转变为精美的贴纸设计
             </p>
           </div>
+          
+          {/* Token不足对话框 */}
+          <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-xl text-center">Token不足</DialogTitle>
+                <DialogDescription className="text-center pt-4">
+                  {tokenErrorMessage}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center my-4">
+                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+              </div>
+              <DialogFooter className="flex sm:justify-center gap-4 mt-4">
+                <Button variant="outline" onClick={() => setShowTokenDialog(false)}>
+                  取消
+                </Button>
+                <Button className="pet-button" onClick={goToPricing}>
+                  前往充值
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
           {/* 生成进度对话框 */}
           <Dialog open={isGenerating} onOpenChange={() => {}}>

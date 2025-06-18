@@ -174,17 +174,26 @@ export const generateSticker = async (
       try {
         // 尝试解析JSON错误响应
         const errorJson = JSON.parse(errorText);
+        console.log('解析后的错误JSON:', errorJson);
+        
         if (errorJson.detail) {
           // 如果是标准FastAPI错误格式
-          errorDetail = errorJson.detail;
+          errorDetail = typeof errorJson.detail === 'string' 
+            ? errorJson.detail 
+            : JSON.stringify(errorJson.detail);
         } else if (errorJson.message) {
           // 如果是自定义错误格式
           errorDetail = errorJson.message;
+        } else {
+          // 其他可能的格式
+          errorDetail = JSON.stringify(errorJson);
         }
       } catch (parseError) {
         // 如果无法解析JSON，使用原始错误文本
         errorDetail = errorText;
       }
+      
+      console.log('提取的错误信息:', errorDetail);
       
       // 返回格式化的错误信息
       return {
@@ -297,7 +306,38 @@ export const checkGenerationStatus = async (generationId: string) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('状态检查错误响应:', errorText);
-      throw new Error(`获取生成状态失败: HTTP error! status: ${response.status}, message: ${errorText}`);
+      
+      // 尝试解析错误响应为JSON
+      let errorDetail = '';
+      try {
+        // 尝试解析JSON错误响应
+        const errorJson = JSON.parse(errorText);
+        console.log('解析后的错误JSON:', errorJson);
+        
+        if (errorJson.detail) {
+          // 如果是标准FastAPI错误格式
+          errorDetail = typeof errorJson.detail === 'string' 
+            ? errorJson.detail 
+            : JSON.stringify(errorJson.detail);
+        } else if (errorJson.message) {
+          // 如果是自定义错误格式
+          errorDetail = errorJson.message;
+        } else {
+          // 其他可能的格式
+          errorDetail = JSON.stringify(errorJson);
+        }
+      } catch (parseError) {
+        // 如果无法解析JSON，使用原始错误文本
+        errorDetail = errorText;
+      }
+      
+      console.log('提取的错误信息:', errorDetail);
+      
+      // 返回错误状态
+      return {
+        status: 'failed',
+        error: errorDetail || `请求失败 (${response.status})`
+      };
     }
     
     const data = await response.json();
@@ -307,6 +347,11 @@ export const checkGenerationStatus = async (generationId: string) => {
   } catch (error) {
     console.error('=== 检查生成状态失败 ===');
     console.error('错误详情:', error);
-    throw error;
+    
+    // 返回错误状态
+    return {
+      status: 'failed',
+      error: error instanceof Error ? error.message : '未知错误'
+    };
   }
 };
