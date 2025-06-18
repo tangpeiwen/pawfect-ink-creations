@@ -1,0 +1,22 @@
+name: pawfect
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - fastapi==0.110.0
+    - uvicorn==0.28.0
+    - python-multipart==0.0.9
+    - pydantic==2.7.0
+    - pydantic-settings==2.2.1
+    - python-dotenv==1.0.1
+    - supabase==2.15.2
+    - gotrue==2.12.0
+    - httpx==0.27.0
+    - Pillow==10.2.0
+    - openai==1.14.0
+    - tenacity==8.2.3
+    - asyncio==3.4.3
+    - uuid==1.30 

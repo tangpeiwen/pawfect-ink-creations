@@ -1,9 +1,5 @@
 {
-  "build_command": "pip install -r requirements.txt",
-  "start_command": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
-  "install_command": "pip install -r requirements.txt",
-  "python_version": "3.11",
-  "cache": {
-    "pip": true
-  }
+  "build_command": "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b && ~/miniconda3/bin/conda env create -f environment.yml",
+  "start_command": "~/miniconda3/envs/pawfect/bin/uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+  "python_version": "3.10"
 } 

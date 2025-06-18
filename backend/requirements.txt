@@ -7,6 +7,7 @@ pydantic-settings==2.2.1
 python-dotenv==1.0.1
 
 # 数据库
+supafunc==0.9.4
 supabase==2.15.2
 
 # 图像处理
