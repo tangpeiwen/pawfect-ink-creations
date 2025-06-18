@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 // 使用相对路径，通过Vite代理访问API
 const API_BASE = import.meta.env.PROD 
-  ? 'https://pawfect-ink.zeabur.app/api'  // 生产环境使用完整URL
+  ? 'https://api.pawfect.ink'  // 更新为新的API域名（注意不需要/api后缀）
   : '/api';  // 开发环境仍使用相对路径
 
 /**
@@ -73,7 +73,7 @@ export const uploadImage = async (file: File) => {
     formData.append('image', file);
     
     const authHeaders = await getAuthHeadersForFormData();
-    console.log('认证头信息:', JSON.stringify(authHeaders));
+    // console.log('认证头信息:', JSON.stringify(authHeaders));
     
     // 检查是否获取到了认证令牌
     if (!authHeaders['Authorization']) {

@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       // 代理所有/api开头的请求到Zeabur上的后端服务
       '/api': {
-        target: 'https://pawfect-ink.zeabur.app',  // 使用HTTPS协议
+        target: 'https://api.pawfect.ink',  // 更新为新的API域名
         changeOrigin: true,
         secure: true,  // HTTPS协议，设为true
         followRedirects: true,  // 自动跟随重定向
@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
       },
       // 代理静态资源请求
       '/storage': {
-        target: 'https://pawfect-ink.zeabur.app',  // 使用HTTPS协议
+        target: 'https://api.pawfect.ink',  // 更新为新的API域名
         changeOrigin: true,
         secure: true,  // HTTPS协议，设为true
         followRedirects: true,  // 自动跟随重定向
