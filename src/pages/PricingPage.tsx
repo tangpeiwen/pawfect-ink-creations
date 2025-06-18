@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from '@/lib/api';
 
 const PricingPage = () => {
   const { session, isAuthenticated } = useAuth();
@@ -122,7 +123,7 @@ const PricingPage = () => {
     if (currentOrderId && showQRCode && paymentStatus === 'pending') {
       intervalId = setInterval(async () => {
         try {
-          const response = await fetch(`/api/orders/${currentOrderId}`, {
+          const response = await fetch(`${API_BASE}/orders/${currentOrderId}`, {
             headers: {
               'Authorization': `Bearer ${session?.access_token}`,
             }
@@ -169,7 +170,7 @@ const PricingPage = () => {
       }
 
       // 创建订单
-      const response = await fetch('/api/orders/create', {
+      const response = await fetch(`${API_BASE}/orders/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

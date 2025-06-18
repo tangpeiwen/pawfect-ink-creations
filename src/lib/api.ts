@@ -168,6 +168,7 @@ export const generateSticker = async (
     if (!generateResponse.ok) {
       const errorText = await generateResponse.text();
       console.error('API错误响应:', errorText);
+      console.error('响应状态码:', generateResponse.status);
       
       // 尝试解析错误响应为JSON
       let errorDetail = '';
@@ -189,11 +190,13 @@ export const generateSticker = async (
           errorDetail = JSON.stringify(errorJson);
         }
       } catch (parseError) {
+        console.error('JSON解析失败:', parseError);
         // 如果无法解析JSON，使用原始错误文本
         errorDetail = errorText;
       }
       
       console.log('提取的错误信息:', errorDetail);
+      console.log('错误信息是否包含Token不足:', errorDetail.includes('Token不足'));
       
       // 返回格式化的错误信息
       return {
