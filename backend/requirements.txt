@@ -8,6 +8,7 @@ python-dotenv==1.0.1
 
 # 数据库
 supabase==2.3.4
+httpx>=0.24.0,<0.26.0  # supabase的依赖要求
 
 # 图像处理
 Pillow==10.2.0
@@ -20,8 +21,4 @@ tenacity==8.2.3
 asyncio==3.4.3
 uuid==1.30
 python-jose==3.3.0  # JWT支持
-passlib==1.7.4     # 密码哈希
-
-# 测试工具（开发环境）
-pytest==8.0.2
-httpx>=0.24.0,<0.26.0  # 修改以兼容supabase的要求 
+passlib==1.7.4     # 密码哈希 
