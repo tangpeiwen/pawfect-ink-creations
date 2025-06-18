@@ -29,6 +29,8 @@ class Settings(BaseSettings):
             "http://localhost:3000",
             "http://localhost:5173",  # Vite默认端口
             "http://localhost:8080",  # 前端运行的端口
+            "https://pawfect.ink",
+            "https://www.pawfect.ink",
         ]
         
         # 添加前端域名
@@ -64,10 +66,10 @@ class Settings(BaseSettings):
     OPENAI_MAX_RETRIES: int = 2
 
     # Segmind API设置
-    SEGMIND_API_KEY: str = os.getenv("SEGMIND_API_KEY", "")
-    SEGMIND_API_BASE: str = os.getenv("SEGMIND_API_BASE", "https://api.segmind.com/v1")
-    SEGMIND_API_TIMEOUT: int = 60
-    SEGMIND_MAX_RETRIES: int = 2
+    # SEGMIND_API_KEY: str = os.getenv("SEGMIND_API_KEY", "")
+    # SEGMIND_API_BASE: str = os.getenv("SEGMIND_API_BASE", "https://api.segmind.com/v1")
+    # SEGMIND_API_TIMEOUT: int = 60
+    # SEGMIND_MAX_RETRIES: int = 2
 
     # TuZi API设置
     TUZI_API_KEY: str = os.getenv("TUZI_API_KEY", "")
