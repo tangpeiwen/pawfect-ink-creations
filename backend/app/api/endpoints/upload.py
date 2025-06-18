@@ -222,14 +222,19 @@ def preprocess_image(content: bytes) -> bytes:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             
-            # 调整大小（如果太大的话）
-            max_size = (1024, 1024)
+            # 调整大小（更加激进地减小尺寸）
+            max_size = (800, 800)  # 从1024降到800
             if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
             
-            # 保存为字节流
+            # 保存为字节流，降低质量
             output = io.BytesIO()
-            img.save(output, format='JPEG', quality=85, optimize=True)
+            img.save(output, format='JPEG', quality=70, optimize=True)  # 从85%降到70%
+            
+            # 记录处理后的图片大小
+            processed_size = len(output.getvalue()) / 1024  # KB
+            logger.info(f"图片处理后大小: {processed_size:.2f} KB")
+            
             return output.getvalue()
             
     except Exception as e:
