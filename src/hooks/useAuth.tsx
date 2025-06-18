@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { API_BASE } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // 当用户登录时，同步用户资料到后端
         if (event === 'SIGNED_IN' && session?.user) {
           try {
-            const response = await fetch('/api/users/profile', {
+            const response = await fetch(`${API_BASE}/users/profile`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
