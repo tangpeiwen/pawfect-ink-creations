@@ -168,7 +168,29 @@ export const generateSticker = async (
     if (!generateResponse.ok) {
       const errorText = await generateResponse.text();
       console.error('API错误响应:', errorText);
-      throw new Error(`HTTP error! status: ${generateResponse.status}, message: ${errorText}`);
+      
+      // 尝试解析错误响应为JSON
+      let errorDetail = '';
+      try {
+        // 尝试解析JSON错误响应
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.detail) {
+          // 如果是标准FastAPI错误格式
+          errorDetail = errorJson.detail;
+        } else if (errorJson.message) {
+          // 如果是自定义错误格式
+          errorDetail = errorJson.message;
+        }
+      } catch (parseError) {
+        // 如果无法解析JSON，使用原始错误文本
+        errorDetail = errorText;
+      }
+      
+      // 返回格式化的错误信息
+      return {
+        success: false,
+        message: errorDetail || `请求失败 (${generateResponse.status})`
+      };
     }
 
     const generateData = await generateResponse.json();
@@ -206,7 +228,12 @@ export const generateSticker = async (
   } catch (error) {
     console.error('=== generateSticker API调用失败 ===');
     console.error('错误详情:', error);
-    throw error;
+    
+    // 返回格式化的错误信息
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '未知错误'
+    };
   }
 };
 

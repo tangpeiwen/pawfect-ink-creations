@@ -124,6 +124,33 @@ const CreatePage = () => {
       
       console.log('generateSticker API返回结果:', result);
       
+      // 检查API调用是否成功
+      if (!result.success) {
+        // API调用失败，显示错误信息
+        setIsGenerating(false);
+        setGenerationStatus("生成失败");
+        
+        // 显示错误信息，特别关注Token不足的情况
+        const errorMessage = result.message || '生成请求失败';
+        
+        // 检查是否是Token不足的错误
+        if (errorMessage.includes('Token不足')) {
+          // 显示Token不足的错误，并提供充值链接
+          toast.error(errorMessage, {
+            action: {
+              label: '前往充值',
+              onClick: () => navigate('/pricing')
+            },
+            duration: 10000  // 显示10秒
+          });
+        } else {
+          // 显示其他错误
+          toast.error(errorMessage);
+        }
+        
+        return;
+      }
+      
       // 设置进度监控
       setGenerationStatus("任务已提交，正在处理...");
       setGenerationProgress(20);
@@ -193,7 +220,22 @@ const CreatePage = () => {
               } else if (statusResult.status === 'failed') {
                 setIsGenerating(false);
                 setGenerationProgress(0);
-                toast.error(`生成失败: ${statusResult.error || '未知错误'}`);
+                
+                // 检查是否是Token不足的错误
+                const errorMessage = statusResult.error || '未知错误';
+                if (errorMessage.includes('Token不足')) {
+                  // 显示Token不足的错误，并提供充值链接
+                  toast.error(errorMessage, {
+                    action: {
+                      label: '前往充值',
+                      onClick: () => navigate('/pricing')
+                    },
+                    duration: 10000  // 显示10秒
+                  });
+                } else {
+                  // 显示其他错误
+                  toast.error(`生成失败: ${errorMessage}`);
+                }
               }
             }
           } catch (error) {
