@@ -62,29 +62,29 @@ const StyleSelector = ({
           {
             id: "watercolor",
             name: "蜡笔插画风",
-            image: "/images/彩色.jpg",
+            image: "/images/color.jpg", // 使用public目录下的图片
             description: "线条较粗，手绘感强，保留可爱氛围",
             promptDescription: "手绘笔触，蜡笔质感，涂鸦风格，粗线条勾勒，色彩鲜艳但有限，有轻微的不规则笔触纹理"
           },
           {
             id: "minimalist",
             name: "粗线条手绘风",
-            image: "/images/简笔.jpg",
+            image: "/images/minimal.jpg", // 使用public目录下的图片
             description: "线条不规则，带有铅笔或炭笔质感",
             promptDescription: "粗线条手绘效果，线条不规则，带有铅笔或炭笔质感，简约但具有表现力，有意的粗糙感，线条有力"
           },
           {
             id: "cartoon",
             name: "Q版贴纸风",
-            image: "/images/卡通.jpg",
+            image: "/images/cartoon.jpg", // 使用public目录下的图片
             description: "表情Q萌的卡通风格",
             promptDescription: "Q版贴纸风格，简笔画线稿，手绘可爱效果，略微夸张的特征，线条粗细变化，平面化设计，适合贴纸的封闭轮廓"
           },
           {
             id: "des",
             name: "细节写意风",
-            image: "/images/花纹.jpg",
-            description: "保留丰富体态结构，细节刻画细腻",
+            image: "/images/detailed.jpg", // 使用public目录下的图片
+            description: "细节刻画细腻，强烈线条感",
             promptDescription: "细节写意风格，精细的线条变化，保留丰富的体态结构，细腻的纹理刻画，保持解剖学准确性但有艺术性简化"
           }
         ];
