@@ -10,6 +10,7 @@ const PaymentResult = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<"success" | "failed" | "pending">("pending");
   const [message, setMessage] = useState("正在查询支付结果...");
+  const { session } = useAuth();
 
   useEffect(() => {
     const orderId = searchParams.get("out_trade_no");
@@ -22,7 +23,17 @@ const PaymentResult = () => {
     // 查询订单状态
     const checkOrderStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE}/orders/${orderId}`);
+        // 本地开发环境使用相对路径，生产环境使用完整URL
+        const apiUrl = import.meta.env.PROD 
+          ? `${API_BASE}/orders/${orderId}`
+          : `/api/orders/${orderId}`;
+          
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+          }
+        });
+        
         if (!response.ok) {
           throw new Error("查询订单失败");
         }
@@ -44,8 +55,11 @@ const PaymentResult = () => {
       }
     };
 
-    checkOrderStatus();
-  }, [searchParams]);
+    // 确保有认证token后再查询
+    if (session?.access_token) {
+      checkOrderStatus();
+    }
+  }, [searchParams, session]);
 
   return (
     <Layout>
