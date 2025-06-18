@@ -19,4 +19,5 @@ dependencies:
     - openai==1.14.0
     - tenacity==8.2.3
     - asyncio==3.4.3
-    - uuid==1.30 
+    - uuid==1.30
+    - requests==2.31.0 
