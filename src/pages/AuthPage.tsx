@@ -59,7 +59,12 @@ const AuthPage = () => {
       // 登录成功后同步用户资料到后端
       if (data.user) {
         try {
-          const response = await fetch(`${API_BASE}/users/profile`, {
+          // 本地开发环境使用相对路径，生产环境使用完整URL
+          const apiUrl = import.meta.env.PROD 
+            ? `${API_BASE}/users/profile`
+            : '/api/users/profile';
+            
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

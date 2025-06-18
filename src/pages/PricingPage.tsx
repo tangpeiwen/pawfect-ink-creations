@@ -123,7 +123,12 @@ const PricingPage = () => {
     if (currentOrderId && showQRCode && paymentStatus === 'pending') {
       intervalId = setInterval(async () => {
         try {
-          const response = await fetch(`${API_BASE}/orders/${currentOrderId}`, {
+          // 本地开发环境使用相对路径，生产环境使用完整URL
+          const apiUrl = import.meta.env.PROD 
+            ? `${API_BASE}/orders/${currentOrderId}`
+            : `/api/orders/${currentOrderId}`;
+            
+          const response = await fetch(apiUrl, {
             headers: {
               'Authorization': `Bearer ${session?.access_token}`,
             }
@@ -170,7 +175,12 @@ const PricingPage = () => {
       }
 
       // 创建订单
-      const response = await fetch(`${API_BASE}/orders/create`, {
+      // 本地开发环境使用相对路径，生产环境使用完整URL
+      const apiUrl = import.meta.env.PROD 
+        ? `${API_BASE}/orders/create`
+        : '/api/orders/create';
+        
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

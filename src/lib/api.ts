@@ -41,7 +41,13 @@ const getAuthHeadersForFormData = async () => {
  */
 export const fetchStyles = async () => {
   try {
-    const response = await fetch(`${API_BASE}/styles`);
+    // 本地开发环境使用相对路径，生产环境使用完整URL
+    const apiUrl = import.meta.env.PROD 
+      ? `${API_BASE}/styles`
+      : '/api/styles';
+    
+    console.log('获取风格列表，API地址:', apiUrl);
+    const response = await fetch(apiUrl);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
