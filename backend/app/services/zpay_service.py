@@ -3,12 +3,14 @@ import time
 import requests
 from typing import Dict
 from app.core.config import settings
+import logging
 
 class ZpayService:
     def __init__(self):
         self.api_url = settings.ZPAY_API_URL
         self.pid = settings.ZPAY_PID
         self.pkey = settings.ZPAY_PKEY
+        self.logger = logging.getLogger(__name__)
         
         # 验证必需的配置
         if not self.pid or not self.pkey:
@@ -122,27 +124,25 @@ class ZpayService:
     
     def verify_notify(self, notify_params: Dict) -> bool:
         """验证支付回调通知"""
-        print(f"[DEBUG] ZpayService - 开始验证回调签名")
-        print(f"[DEBUG] ZpayService - 回调参数: {notify_params}")
+        self.logger.debug("开始验证回调签名")
         
         # 1. 验证签名
         received_sign = notify_params.get("sign", "").lower()
         if not received_sign:
-            print(f"[DEBUG] ZpayService - 回调中没有签名参数")
+            self.logger.error("回调中没有签名参数")
             return False
             
-        print(f"[DEBUG] ZpayService - 接收到的签名: {received_sign}")
+        self.logger.debug(f"接收到的签名: {received_sign}")
         
         # 2. 生成签名
         params_without_sign = {k: v for k, v in notify_params.items() 
                              if k not in ["sign", "sign_type"]}
-        print(f"[DEBUG] ZpayService - 用于签名的参数: {params_without_sign}")
         
         calculated_sign = self._generate_sign(params_without_sign)
-        print(f"[DEBUG] ZpayService - 计算出的签名: {calculated_sign}")
+        self.logger.debug(f"计算出的签名: {calculated_sign}")
         
         # 3. 比对签名
         is_valid = received_sign == calculated_sign
-        print(f"[DEBUG] ZpayService - 签名验证结果: {is_valid}")
+        self.logger.debug(f"签名验证结果: {is_valid}")
         
         return is_valid 

@@ -49,9 +49,12 @@ async def create_order(
         # 统一使用API支付，不区分设备类型
         client_ip = client_request.client.host if client_request.client else "127.0.0.1"
         
+        # 金额处理：确保金额单位一致，以元为单位发送给支付接口
+        payment_amount = package["price_rmb"]/100  # 分转为元
+        
         payment_result = await zpay_service.create_api_order(
             order_id=order_id,
-            amount=package["price_rmb"]/100,  # 将金额除以10
+            amount=payment_amount,
             notify_url=notify_url,
             return_url=return_url,
             client_ip=client_ip,
@@ -108,8 +111,6 @@ async def payment_notify(request: Request):
         
         # 记录回调信息用于调试
         logger.info(f"收到支付回调({request.method}): {notify_dict}")
-        print(f"[DEBUG] 收到支付回调({request.method}): {notify_dict}")  # 添加控制台输出
-        print(f"[DEBUG] 回调来源IP: {request.client.host if request.client else 'unknown'}")
         
         # 检查是否有必要的回调参数
         required_params = ['pid', 'out_trade_no', 'trade_status', 'sign']
@@ -117,17 +118,12 @@ async def payment_notify(request: Request):
         if missing_params:
             error_msg = f"回调缺少必要参数: {missing_params}"
             logger.error(error_msg)
-            print(f"[DEBUG] {error_msg}")
             return PlainTextResponse("fail", status_code=200)
         
         # 1. 验证签名
-        print(f"[DEBUG] 开始验证签名...")
         if not zpay_service.verify_notify(notify_dict):
             logger.error(f"支付回调验签失败: {notify_dict}")
-            print(f"[DEBUG] 支付回调验签失败: {notify_dict}")
             return PlainTextResponse("fail", status_code=200)
-        
-        print(f"[DEBUG] 签名验证通过")
         
         # 2. 获取订单信息
         order_id = notify_dict.get("out_trade_no")
@@ -135,39 +131,32 @@ async def payment_notify(request: Request):
         notify_money = notify_dict.get("money")  # 回调中的金额
         trade_no = notify_dict.get("trade_no")   # 支付平台订单号
         
-        print(f"[DEBUG] 订单ID: {order_id}, 支付状态: {trade_status}, 金额: {notify_money}")
-        
         if not order_id:
             logger.error("回调缺少订单号")
             return PlainTextResponse("fail", status_code=200)
         
         # 3. 查询订单
-        print(f"[DEBUG] 查询订单: {order_id}")
         order = await db_service.get_order(order_id)
         if not order:
             logger.error(f"订单不存在: {order_id}")
-            print(f"[DEBUG] 订单不存在: {order_id}")
             return PlainTextResponse("fail", status_code=200)
-        
-        print(f"[DEBUG] 找到订单，当前状态: {order.get('status')}")
         
         # 4. 防止重复处理
         if order["status"] == "paid":
             logger.info(f"订单 {order_id} 已经处理过，跳过")
-            print(f"[DEBUG] 订单 {order_id} 已经处理过，跳过")
             return PlainTextResponse("success", status_code=200)
         
         # 5. 验证金额
         if notify_money:
-            expected_amount = order["amount"] / 100  # 将期望金额也除以100进行比较
+            # 金额处理：确保金额单位一致，统一以元为单位进行比较
+            expected_amount = order["amount"] / 100  # 将分转为元
             actual_amount = float(notify_money)
             
-            print(f"[DEBUG] 金额验证 - 期望: {expected_amount}, 实际: {actual_amount}")
+            logger.info(f"订单 {order_id} 金额验证 - 期望: {expected_amount}元, 实际: {actual_amount}元")
             
             if abs(expected_amount - actual_amount) > 0.01:  # 允许1分钱的误差
-                error_msg = f"订单 {order_id} 金额不匹配: 期望 {expected_amount}, 实际 {actual_amount}"
+                error_msg = f"订单 {order_id} 金额不匹配: 期望 {expected_amount}元, 实际 {actual_amount}元"
                 logger.error(error_msg)
-                print(f"[DEBUG] {error_msg}")
                 await db_service.update_order(order_id, {
                     "status": "failed",
                     "error_message": f"金额不匹配: 期望{expected_amount}元, 实际{actual_amount}元"
@@ -175,10 +164,7 @@ async def payment_notify(request: Request):
                 return PlainTextResponse("fail", status_code=200)
         
         # 6. 处理支付结果
-        print(f"[DEBUG] 处理支付状态: {trade_status}")
         if trade_status == "TRADE_SUCCESS":
-            print(f"[DEBUG] 支付成功，开始更新订单状态")
-            
             # 更新订单状态
             update_result = await db_service.update_order(order_id, {
                 "status": "paid",
@@ -191,10 +177,7 @@ async def payment_notify(request: Request):
                 }
             })
             
-            print(f"[DEBUG] 订单状态更新结果: {update_result}")
-            
             # 给用户增加token
-            print(f"[DEBUG] 开始增加用户Token: user_id={order['user_id']}, amount={order['token_amount']}")
             token_result = await db_service.add_tokens(
                 user_id=order["user_id"],
                 amount=order["token_amount"],
@@ -202,15 +185,11 @@ async def payment_notify(request: Request):
                 package_id=order["package_id"]
             )
             
-            print(f"[DEBUG] Token增加结果: {token_result}")
-            
             logger.info(f"订单 {order_id} 支付成功，金额: {notify_money}元")
-            print(f"[DEBUG] 订单 {order_id} 处理完成，返回success")
             return PlainTextResponse("success", status_code=200)
         
         elif trade_status in ["TRADE_CLOSED", "TRADE_FINISHED"]:
             # 交易关闭或完成但不成功
-            print(f"[DEBUG] 支付失败，状态: {trade_status}")
             await db_service.update_order(order_id, {
                 "status": "failed",
                 "error_message": f"支付状态: {trade_status}",
@@ -225,15 +204,11 @@ async def payment_notify(request: Request):
         
         else:
             # 其他状态，暂不处理
-            print(f"[DEBUG] 未处理的支付状态: {trade_status}")
             logger.info(f"订单 {order_id} 状态: {trade_status}，暂不处理")
             return PlainTextResponse("success", status_code=200)
             
     except Exception as e:
         logger.error(f"处理支付回调失败: {str(e)}", exc_info=True)
-        print(f"[DEBUG] 处理支付回调异常: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return PlainTextResponse("fail", status_code=200)
 
 @router.get("/{order_id}", response_model=OrderResponse)
@@ -276,4 +251,4 @@ async def get_order_history(
         }
     except Exception as e:
         logger.error(f"获取订单历史失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"获取订单历史失败: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"获取订单历史失败: {str(e)}")
