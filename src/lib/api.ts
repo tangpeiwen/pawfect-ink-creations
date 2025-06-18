@@ -1,7 +1,9 @@
 import { supabase } from './supabase';
 
 // 使用相对路径，通过Vite代理访问API
-const API_BASE = '/api';
+const API_BASE = import.meta.env.PROD 
+  ? 'https://pawfect-ink.zeabur.app/api'  // 生产环境使用完整URL
+  : '/api';  // 开发环境仍使用相对路径
 
 /**
  * 获取认证头信息
