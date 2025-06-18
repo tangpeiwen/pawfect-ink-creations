@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { PawPrint, Mail, Lock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from '@/hooks/useAuth';
+import { API_BASE } from '@/lib/api';
 
 const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +59,7 @@ const AuthPage = () => {
       // 登录成功后同步用户资料到后端
       if (data.user) {
         try {
-          const response = await fetch('/api/users/profile', {
+          const response = await fetch(`${API_BASE}/users/profile`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

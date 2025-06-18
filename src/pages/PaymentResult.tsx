@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { API_BASE } from "@/lib/api";
 
 const PaymentResult = () => {
   const [searchParams] = useSearchParams();
@@ -20,7 +22,7 @@ const PaymentResult = () => {
     // 查询订单状态
     const checkOrderStatus = async () => {
       try {
-        const response = await fetch(`/api/orders/${orderId}`);
+        const response = await fetch(`${API_BASE}/orders/${orderId}`);
         if (!response.ok) {
           throw new Error("查询订单失败");
         }
