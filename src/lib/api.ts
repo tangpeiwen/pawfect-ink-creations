@@ -71,12 +71,21 @@ export const uploadImage = async (file: File) => {
     formData.append('image', file);
     
     const authHeaders = await getAuthHeadersForFormData();
+    console.log('认证头信息:', JSON.stringify(authHeaders));
+    
+    // 检查是否获取到了认证令牌
+    if (!authHeaders['Authorization']) {
+      console.warn('警告: 未获取到认证令牌，这可能导致401错误');
+    } else {
+      console.log('已设置认证令牌 (长度):', authHeaders['Authorization'].length);
+    }
     
     console.log('通过Vite代理上传图片');
     const response = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
       body: formData,
-      headers: authHeaders
+      headers: authHeaders,
+      credentials: 'include'  // 包含凭证
     });
 
     console.log('上传响应状态:', response.status, response.statusText);
