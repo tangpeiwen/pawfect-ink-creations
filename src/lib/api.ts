@@ -1,9 +1,19 @@
 import { supabase } from './supabase';
 
 // 使用相对路径，通过Vite代理访问API
-export const API_BASE = import.meta.env.PROD 
-  ? 'https://api.pawfect.ink'  // 添加/api前缀，匹配后端的API_PREFIX配置
-  : '/api';  // 开发环境仍使用相对路径
+const API_BASE = import.meta.env.PROD 
+  ? 'https://api.pawfect.ink/api'  // 生产环境直接访问部署的API
+  : '/api';  // 开发环境使用Vite代理
+
+// 导出API_BASE供其他模块使用
+export { API_BASE };
+
+// 用于调试的辅助函数
+const buildApiUrl = (endpoint: string) => {
+  const url = `${API_BASE}${endpoint}`;
+  console.log(`构建API URL: ${endpoint} -> ${url}`);
+  return url;
+};
 
 /**
  * 获取认证头信息
@@ -41,18 +51,13 @@ const getAuthHeadersForFormData = async () => {
  */
 export const fetchStyles = async () => {
   try {
-    // 本地开发环境使用相对路径，生产环境使用完整URL
-    const apiUrl = import.meta.env.PROD 
-      ? `${API_BASE}/styles`
-      : '/api/styles';
-    
-    console.log('获取风格列表，API地址:', apiUrl);
+    const apiUrl = buildApiUrl('/styles');
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     
     if (!data.success) {
@@ -73,35 +78,64 @@ export const fetchStyles = async () => {
  */
 export const uploadImage = async (file: File) => {
   try {
-    console.log('开始上传图片:', file.name, '类型:', file.type, '大小:', file.size);
+    console.log('=== 开始上传图片 ===');
+    console.log('文件名:', file.name);
+    console.log('文件类型:', file.type);
+    console.log('文件大小:', file.size);
+    console.log('当前环境:', import.meta.env.MODE);
+    console.log('是否生产环境:', import.meta.env.PROD);
+    console.log('API_BASE值:', API_BASE);
     
     const formData = new FormData();
     formData.append('image', file);
     
+    // 检查用户认证状态
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('当前认证状态:', !!sessionData.session);
+    console.log('用户ID:', sessionData.session?.user?.id);
+    
     const authHeaders = await getAuthHeadersForFormData();
-    // console.log('认证头信息:', JSON.stringify(authHeaders));
+    console.log('认证头信息:', Object.keys(authHeaders));
     
     // 检查是否获取到了认证令牌
     if (!authHeaders['Authorization']) {
-      console.warn('警告: 未获取到认证令牌，这可能导致401错误');
+      console.error('未获取到认证令牌，这将导致401错误');
+      throw new Error('用户未登录或认证已过期，请重新登录');
     } else {
-      console.log('已设置认证令牌 (长度):', authHeaders['Authorization'].length);
+      console.log('认证令牌长度:', authHeaders['Authorization'].length);
     }
     
-    console.log('通过Vite代理上传图片');
-    const response = await fetch(`${API_BASE}/upload`, {
+    const uploadUrl = buildApiUrl('/upload');
+    console.log('开始发送上传请求...');
+    
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
       headers: authHeaders,
       credentials: 'include'  // 包含凭证
     });
 
-    console.log('上传响应状态:', response.status, response.statusText);
+    console.log('上传请求发送完成');
+    console.log('响应状态:', response.status, response.statusText);
+    console.log('实际请求URL:', response.url);
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error('上传失败, 服务器返回:', errorText);
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      console.error('响应状态码:', response.status);
+      
+      // 根据状态码提供更具体的错误信息
+      if (response.status === 401) {
+        throw new Error('认证失败，请重新登录');
+      } else if (response.status === 403) {
+        throw new Error('权限不足，无法上传图片');
+      } else if (response.status === 413) {
+        throw new Error('文件太大，请选择小于10MB的图片');
+      } else if (response.status === 404) {
+        throw new Error('上传接口不存在，请检查服务器配置');
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
     }
 
     const data = await response.json();
@@ -111,9 +145,13 @@ export const uploadImage = async (file: File) => {
       throw new Error(data.message || '上传失败');
     }
     
+    console.log('=== 上传完成 ===');
     return data;
   } catch (error) {
-    console.error('上传图片失败:', error);
+    console.error('=== 上传图片失败 ===');
+    console.error('错误类型:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('错误信息:', error instanceof Error ? error.message : String(error));
+    console.error('错误堆栈:', error instanceof Error ? error.stack : '无堆栈信息');
     throw error;
   }
 };
@@ -154,13 +192,13 @@ export const generateSticker = async (
     };
     
     console.log('=== generateSticker API调用 ===');
-    console.log('请求URL:', `${API_BASE}/generate`);
+    const generateUrl = buildApiUrl('/generate');
     console.log('请求体:', JSON.stringify(requestBody, null, 2));
     
     const authHeaders = await getAuthHeaders();
     
     // 发起生成请求
-    const generateResponse = await fetch(`${API_BASE}/generate`, {
+    const generateResponse = await fetch(generateUrl, {
       method: 'POST',
       headers: {
         ...authHeaders,
@@ -265,7 +303,8 @@ const pollGenerationStatus = async (generationId: string) => {
   const interval = 10000; // 每10秒轮询一次
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const statusResponse = await fetch(`${API_BASE}/status/${generationId}`);
+    const statusUrl = buildApiUrl(`/status/${generationId}`);
+    const statusResponse = await fetch(statusUrl);
     
     if (!statusResponse.ok) {
       throw new Error(`获取生成状态失败: HTTP error! status: ${statusResponse.status}`);
@@ -302,11 +341,11 @@ export const checkGenerationStatus = async (generationId: string) => {
   try {
     console.log('=== 检查生成状态 ===');
     console.log('generationId:', generationId);
-    console.log('请求URL:', `${API_BASE}/status/${generationId}`);
     
+    const statusUrl = buildApiUrl(`/status/${generationId}`);
     const authHeaders = await getAuthHeaders();
     
-    const response = await fetch(`${API_BASE}/status/${generationId}`, {
+    const response = await fetch(statusUrl, {
       headers: authHeaders
     });
     

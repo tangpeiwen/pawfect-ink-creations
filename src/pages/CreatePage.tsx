@@ -335,14 +335,14 @@ const CreatePage = () => {
   const currentResultImage = resultImages[selectedResultIndex] || null;
   
   // 添加调试信息
-  console.log('CreatePage 当前状态:', {
-    resultImages,
-    selectedResultIndex,
-    currentResultImage,
-    isGenerating,
-    isUploading,
-    uploadProgress
-  });
+  // console.log('CreatePage 当前状态:', {
+  //   resultImages,
+  //   selectedResultIndex,
+  //   currentResultImage,
+  //   isGenerating,
+  //   isUploading,
+  //   uploadProgress
+  // });
   
   // 处理平滑过渡到风格选择页面
   const handleProceedToStyle = async () => {
