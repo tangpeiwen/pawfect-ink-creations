@@ -254,23 +254,24 @@ class DatabaseService:
     async def add_tokens(self, user_id: str, amount: int, description: str, package_id: Optional[str] = None) -> None:
         """增加用户token（支付成功后调用）"""
         try:
-            print(f"[DEBUG] 开始增加用户Token: user_id={user_id}, amount={amount}")
+            logger.info(f"开始增加用户Token: user_id={user_id}, amount={amount}")
             
             # 先检查用户是否存在，如果不存在则创建
             user_profile = await self.get_user_profile(user_id)
             if not user_profile:
-                print(f"[DEBUG] 用户 {user_id} 不存在，尝试创建用户资料")
+                logger.info(f"用户 {user_id} 不存在，创建用户资料")
                 # 创建基本的用户资料
                 profile_data = {
                     'id': user_id,
                     'display_name': None,
-                    'subscription_tier': 'free'
+                    'subscription_tier': 'free',
+                    'tokens_remaining': 500  # free tier 用户的初始token
                 }
                 try:
                     create_response = self.client.table('user_profiles').insert(profile_data).execute()
-                    print(f"[DEBUG] 用户资料创建结果: {create_response.data}")
+                    logger.info(f"用户资料创建成功: {len(create_response.data) > 0}")
                 except Exception as create_error:
-                    print(f"[DEBUG] 创建用户资料失败: {create_error}")
+                    logger.error(f"创建用户资料失败: {create_error}")
                     # 如果创建失败，可能是用户已存在，再次尝试获取
                     user_profile = await self.get_user_profile(user_id)
                     if not user_profile:
@@ -281,55 +282,43 @@ class DatabaseService:
             if not user_profile:
                 raise Exception("用户资料获取失败")
             
-            print(f"[DEBUG] 用户资料字段: {list(user_profile.keys())}")
+            # 计算新的token余额
+            current_tokens = user_profile.get('tokens_remaining', 0)
+            new_tokens = current_tokens + amount
             
-            # 直接使用tokens_remaining字段
-            current_credits = user_profile.get('tokens_remaining', 0)
-            new_credits = current_credits + amount
-            
-            print(f"[DEBUG] 当前积分: {current_credits}, 增加: {amount}, 新积分: {new_credits}")
+            logger.info(f"用户 {user_id} 当前积分: {current_tokens}, 增加: {amount}, 新积分: {new_tokens}")
             
             # 更新用户余额
-            try:
-                update_response = self.client.table('user_profiles').update({
-                    'tokens_remaining': new_credits
-                }).eq('id', user_id).execute()
-                
-                print(f"[DEBUG] 积分更新结果: {len(update_response.data) > 0}")
-            except Exception as update_error:
-                print(f"[DEBUG] 积分更新失败: {update_error}")
-                # 如果更新失败，可能是字段不存在，数据库可能需要migration
-                if "does not exist" in str(update_error):
-                    print(f"[DEBUG] 字段 tokens_remaining 不存在，数据库可能需要migration")
-                    # 直接跳过积分更新，订单已经成功了
-                    print(f"[DEBUG] 跳过积分更新，但订单状态已更新为paid")
-                else:
-                    raise update_error
+            update_response = self.client.table('user_profiles').update({
+                'tokens_remaining': new_tokens
+            }).eq('id', user_id).execute()
             
-            # 记录token交易（即使积分更新失败也要记录）
+            if not update_response.data:
+                raise Exception(f"更新用户token余额失败，没有返回数据")
+            
+            logger.info(f"用户 {user_id} token余额更新成功")
+            
+            # 记录token交易
             transaction_data = {
                 'user_id': user_id,
                 'amount': amount,
+                'transaction_type': 'purchase',
                 'description': description,
-                'package_id': package_id,
-                'transaction_type': 'purchase'
+                'package_id': package_id
             }
             
-            try:
-                transaction_response = self.client.table('token_transactions').insert(transaction_data).execute()
-                print(f"[DEBUG] 交易记录创建结果: {len(transaction_response.data) > 0}")
-            except Exception as trans_error:
-                print(f"[DEBUG] 创建交易记录失败（但积分已更新）: {trans_error}")
-                # 交易记录创建失败不影响积分更新
+            transaction_response = self.client.table('token_transactions').insert(transaction_data).execute()
+            if transaction_response.data:
+                logger.info(f"Token交易记录创建成功")
+            else:
+                logger.warning(f"Token交易记录创建失败，但token已更新")
             
-            logger.info(f"用户 {user_id} 增加 {amount} tokens，当前余额: {new_credits}")
-            print(f"[DEBUG] Token增加完成")
+            logger.info(f"用户 {user_id} 成功增加 {amount} tokens，当前余额: {new_tokens}")
             
         except Exception as e:
             logger.error(f"增加用户token失败: {e}")
-            print(f"[DEBUG] 增加用户token失败: {e}")
-            # 不要抛出异常，因为订单已经成功更新了
-            print(f"[DEBUG] 注意：积分更新失败，但订单状态已成功更新为paid")
+            # 重新抛出异常，让调用方知道失败了
+            raise Exception(f"增加用户token失败: {str(e)}")
 
     async def consume_tokens(self, user_id: str, amount: int, description: str, generation_id: Optional[str] = None) -> bool:
         """消耗用户token（生成任务完成后调用）"""

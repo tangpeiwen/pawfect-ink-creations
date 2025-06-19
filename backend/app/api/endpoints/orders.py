@@ -178,12 +178,25 @@ async def payment_notify(request: Request):
             })
             
             # 给用户增加token
-            token_result = await db_service.add_tokens(
-                user_id=order["user_id"],
-                amount=order["token_amount"],
-                description=f"购买Token套餐 - 订单{order_id}",
-                package_id=order["package_id"]
-            )
+            try:
+                token_result = await db_service.add_tokens(
+                    user_id=order["user_id"],
+                    amount=order["token_amount"],
+                    description=f"购买Token套餐 - 订单{order_id}",
+                    package_id=order["package_id"]
+                )
+                logger.info(f"订单 {order_id} 支付成功，已为用户 {order['user_id']} 增加 {order['token_amount']} tokens")
+            except Exception as token_error:
+                logger.error(f"订单 {order_id} 支付成功但增加token失败: {str(token_error)}")
+                # 更新订单状态，标记token增加失败
+                await db_service.update_order(order_id, {
+                    "extra": {
+                        **order.get('extra', {}),
+                        "notify_data": notify_dict,
+                        "token_add_error": str(token_error)  # 记录token增加失败的原因
+                    }
+                })
+                # 仍然返回success，但记录了错误信息
             
             logger.info(f"订单 {order_id} 支付成功，金额: {notify_money}元")
             return PlainTextResponse("success", status_code=200)

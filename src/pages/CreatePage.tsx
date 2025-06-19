@@ -40,6 +40,11 @@ const CreatePage = () => {
   // 添加Token不足对话框状态
   const [showTokenDialog, setShowTokenDialog] = useState<boolean>(false);
   const [tokenErrorMessage, setTokenErrorMessage] = useState<string>("");
+  
+  // 添加上传状态管理
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadError, setUploadError] = useState<string>("");
 
   // 处理Token不足的情况
   const handleTokenInsufficient = (errorMessage: string) => {
@@ -54,25 +59,64 @@ const CreatePage = () => {
   };
 
   const handleImageUpload = async (file: File) => {
-    setUploadedImage(file);
+    console.log('开始处理图片上传:', file.name);
+    
+    // 重置状态
+    setUploadError("");
+    setImageId("");
+    setIsUploading(true);
+    setUploadProgress(0);
     
     try {
+      // 设置上传文件
+      setUploadedImage(file);
+      
+      // 模拟上传进度
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+      
+      console.log('调用uploadImage API');
       // 上传图片到后端
       const uploadResult = await uploadImage(file);
+      
+      // 清除进度定时器
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      console.log('上传结果:', uploadResult);
+      
       if (uploadResult.success && uploadResult.imageId) {
         setImageId(uploadResult.imageId);
-        // 移除对上传时analysis的处理，因为现在在生成时才进行分析
+        setIsUploading(false);
+        
+        // 显示成功提示
+        toast.success("图片上传成功！请点击下一步继续选择风格。");
+        
+        console.log('图片上传成功，imageId:', uploadResult.imageId);
       } else {
         throw new Error(uploadResult.message || '上传失败');
       }
     } catch (error) {
       console.error('上传失败:', error);
-      toast.error(`上传失败: ${error instanceof Error ? error.message : '未知错误'}`);
-      return;
+      setIsUploading(false);
+      setUploadProgress(0);
+      
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      setUploadError(errorMessage);
+      
+      // 重置状态
+      setUploadedImage(null);
+      setImageId("");
+      
+      toast.error(`上传失败: ${errorMessage}`);
     }
-    
-    // 上传成功，显示成功提示
-    toast.success("图片上传成功！请点击下一步继续选择风格。");
   };
   
   const handleStyleSelect = (styleId: string) => {
@@ -295,13 +339,27 @@ const CreatePage = () => {
     resultImages,
     selectedResultIndex,
     currentResultImage,
-    isGenerating
+    isGenerating,
+    isUploading,
+    uploadProgress
   });
   
   // 处理平滑过渡到风格选择页面
   const handleProceedToStyle = async () => {
-    if (!uploadedImage) {
+    if (!uploadedImage || !imageId) {
       toast.error("请先上传宠物照片");
+      return;
+    }
+    
+    // 如果仍在上传中，提示用户等待
+    if (isUploading) {
+      toast.warning("图片正在上传中，请稍等片刻");
+      return;
+    }
+    
+    // 如果上传出错，提示用户重新上传
+    if (uploadError) {
+      toast.error("图片上传失败，请重新上传");
       return;
     }
     
@@ -418,12 +476,53 @@ const CreatePage = () => {
             <TabsContent value="upload" className="space-y-8">
               <UploadSection onImageUploaded={handleImageUpload} />
               
+              {/* 显示上传进度 */}
+              {isUploading && (
+                <Card className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">上传进度</span>
+                          <span className="text-sm text-gray-500">{uploadProgress}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center">
+                      正在上传您的宠物照片，请稍等...
+                    </p>
+                  </div>
+                </Card>
+              )}
+              
+              {/* 显示上传错误 */}
+              {uploadError && (
+                <Card className="p-6 border-red-200 bg-red-50">
+                  <div className="text-center space-y-2">
+                    <p className="text-red-600 font-medium">上传失败</p>
+                    <p className="text-sm text-red-500">{uploadError}</p>
+                    <Button 
+                      onClick={() => {
+                        setUploadError("");
+                        setUploadedImage(null);
+                        setImageId("");
+                      }}
+                      variant="outline"
+                      className="mt-2"
+                    >
+                      重新上传
+                    </Button>
+                  </div>
+                </Card>
+              )}
+              
               <div className="flex justify-end">
                 <Button 
                   className={`pet-button transition-all duration-500 ${
-                    uploadedImage ? 'scale-105 shadow-lg hover:scale-110' : ''
-                  } ${isTransitioning ? 'cursor-not-allowed opacity-90' : ''}`}
-                  disabled={!uploadedImage || isTransitioning}
+                    uploadedImage && imageId && !isUploading ? 'scale-105 shadow-lg hover:scale-110' : ''
+                  } ${isTransitioning || isUploading ? 'cursor-not-allowed opacity-90' : ''}`}
+                  disabled={!uploadedImage || !imageId || isUploading || isTransitioning}
                   onClick={handleProceedToStyle}
                 >
                   {isTransitioning ? (
@@ -434,7 +533,15 @@ const CreatePage = () => {
                       </svg>
                       <span className="animate-pulse">准备中...</span>
                     </>
-                  ) : uploadedImage ? (
+                  ) : isUploading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>上传中...</span>
+                    </>
+                  ) : uploadedImage && imageId ? (
                     <>
                       选择风格
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>

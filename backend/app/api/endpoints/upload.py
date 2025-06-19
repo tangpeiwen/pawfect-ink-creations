@@ -41,12 +41,18 @@ async def upload_image(
     Raises:
         HTTPException: 当文件类型不支持、文件太大或处理失败时
     """
-    logger.info(f"用户 {current_user_id} 开始上传图片: {image.filename}")
+    # 添加详细的请求日志
+    logger.info(f"=== 开始处理图片上传请求 ===")
+    logger.info(f"用户ID: {current_user_id}")
+    logger.info(f"文件名: {image.filename}")
+    logger.info(f"文件类型: {image.content_type}")
+    logger.info(f"文件大小: {image.size if hasattr(image, 'size') else '未知'}")
     
     try:
         # 验证文件类型
         if image.content_type not in settings.ALLOWED_IMAGE_TYPES:
             logger.warning(f"文件类型不支持: {image.content_type}")
+            logger.warning(f"支持的文件类型: {settings.ALLOWED_IMAGE_TYPES}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"不支持的文件类型: {image.content_type}，仅支持 {', '.join(settings.ALLOWED_IMAGE_TYPES)}"
@@ -54,20 +60,38 @@ async def upload_image(
         
         # 读取图片内容
         try:
+            logger.info("开始读取上传文件内容")
             content = await image.read()
-            logger.info(f"读取图片内容成功，大小: {len(content)} 字节")
+            content_size = len(content)
+            logger.info(f"读取图片内容成功，实际大小: {content_size} 字节")
+            
+            # 验证文件大小
+            max_size = 10 * 1024 * 1024  # 10MB
+            if content_size > max_size:
+                logger.warning(f"文件大小超出限制: {content_size} > {max_size}")
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"文件大小超出限制，最大允许10MB，实际大小: {content_size / 1024 / 1024:.2f}MB"
+                )
             
             # 验证内容是否为有效图片
             try:
+                logger.info("验证图片内容")
                 img_test = Image.open(io.BytesIO(content))
-                logger.info(f"图片验证成功: 模式={img_test.mode}, 尺寸={img_test.size}")
+                logger.info(f"图片验证成功: 模式={img_test.mode}, 尺寸={img_test.size}, 格式={img_test.format}")
+                img_test.close()  # 释放资源
             except Exception as img_test_error:
+                logger.error(f"图片验证失败: {str(img_test_error)}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"上传的不是有效图片: {str(img_test_error)}"
                 )
+        except HTTPException:
+            # 重新抛出HTTP异常
+            raise
         except Exception as read_error:
             logger.error(f"读取上传内容失败: {str(read_error)}")
+            logger.error(f"错误详情: {traceback.format_exc()}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"读取上传内容失败: {str(read_error)}"
@@ -75,10 +99,13 @@ async def upload_image(
         
         # 预处理图片
         try:
+            logger.info("开始预处理图片")
             processed_image = preprocess_image(content)
-            logger.info("图片预处理成功")
+            processed_size = len(processed_image)
+            logger.info(f"图片预处理成功，处理后大小: {processed_size} 字节")
         except Exception as preprocess_error:
             logger.error(f"图片预处理失败: {str(preprocess_error)}")
+            logger.error(f"错误详情: {traceback.format_exc()}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"图片预处理失败: {str(preprocess_error)}"
@@ -86,10 +113,13 @@ async def upload_image(
         
         # 上传到Supabase存储
         try:
+            logger.info("开始上传到Supabase存储")
             file_id, public_url = await storage_service.upload_user_image(processed_image, "jpg")
-            logger.info(f"上传成功，文件ID: {file_id}, URL: {public_url}")
+            logger.info(f"上传成功，文件ID: {file_id}")
+            logger.info(f"公共URL: {public_url}")
         except Exception as upload_error:
             logger.error(f"上传到存储服务失败: {str(upload_error)}")
+            logger.error(f"错误详情: {traceback.format_exc()}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"上传失败: {str(upload_error)}"
@@ -97,34 +127,43 @@ async def upload_image(
         
         # 创建数据库记录
         try:
+            logger.info("开始创建数据库记录")
             image_data = UploadedImageCreate(
                 user_id=current_user_id,
                 original_filename=image.filename or f"upload_{file_id}.jpg",
-                file_size=len(processed_image),
+                file_size=processed_size,
                 mime_type=image.content_type,
                 storage_path=f"upload/{file_id}.jpg"
             )
             
+            logger.info(f"数据库记录数据: {image_data.dict()}")
+            
             db_result = await db_service.create_uploaded_image(image_data)
             if not db_result:
-                raise Exception("创建数据库记录失败")
+                raise Exception("创建数据库记录失败，返回None")
             
             db_image_id = db_result['id']
             logger.info(f"数据库记录创建成功，ID: {db_image_id}")
             
         except Exception as db_error:
             logger.error(f"创建数据库记录失败: {str(db_error)}")
+            logger.error(f"错误详情: {traceback.format_exc()}")
             # 如果数据库记录创建失败，尝试删除已上传的文件
             try:
+                logger.info("尝试清理已上传的文件")
                 await storage_service.delete_file(f"upload/{file_id}.jpg")
-            except:
-                pass
+                logger.info("文件清理成功")
+            except Exception as cleanup_error:
+                logger.error(f"清理文件失败: {str(cleanup_error)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"创建记录失败: {str(db_error)}"
             )
         
-        logger.info(f"用户 {current_user_id} 图片上传成功: {file_id}")
+        logger.info(f"=== 用户 {current_user_id} 图片上传成功 ===")
+        logger.info(f"文件ID: {file_id}")
+        logger.info(f"数据库ID: {db_image_id}")
+        logger.info(f"公共URL: {public_url}")
         
         return UploadResponse(
             success=True,
@@ -135,9 +174,12 @@ async def upload_image(
         
     except HTTPException:
         # 重新抛出HTTP异常
+        logger.error(f"HTTP异常: {traceback.format_exc()}")
         raise
     except Exception as e:
-        logger.error(f"用户 {current_user_id} 图片上传失败: {str(e)}")
+        logger.error(f"=== 用户 {current_user_id} 图片上传失败 ===")
+        logger.error(f"未捕获异常: {str(e)}")
+        logger.error(f"完整错误堆栈: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"服务器内部错误: {str(e)}"
