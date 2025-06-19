@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 // 使用相对路径，通过Vite代理访问API
 export const API_BASE = import.meta.env.PROD 
-  ? 'https://api.pawfect.ink/api'  // 添加/api前缀，匹配后端的API_PREFIX配置
+  ? 'https://api.pawfect.ink'  // 添加/api前缀，匹配后端的API_PREFIX配置
   : '/api';  // 开发环境仍使用相对路径
 
 /**
