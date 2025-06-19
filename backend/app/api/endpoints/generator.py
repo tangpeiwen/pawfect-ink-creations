@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, status
 from app.models.schemas import GenerationRequest, GenerationResponse, GenerationStatusResponse, GenerationTask, GenerationCreate, GenerationUpdate, GenerationResultCreate
-from app.services.openai_service import analyze_pet_image
+# from app.services.openai_service import analyze_pet_image
 from app.services.custom_openai_service import generate_sticker_with_custom_api
 from app.services.database import db_service
 from app.utils.helpers import generate_unique_id, validate_generation_request
@@ -225,12 +225,11 @@ async def generate_sticker_background(
         else:
             logger.info(f"Generation_result保存成功: {result_record}")
         
-        # 最终更新：任务完成（即使result保存失败也要更新状态）
+        # 最终更新：任务完成（不包含result_url，因为它存储在generation_results表中）
         logger.info(f"开始最终状态更新: generation_id={generation_id}")
         final_update = await db_service.update_generation(generation_id, GenerationUpdate(
             status='completed',
-            progress=100,
-            result_url=result_url
+            progress=100
         ))
         
         if not final_update:

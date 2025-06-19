@@ -304,7 +304,8 @@ class DatabaseService:
                 'amount': amount,
                 'transaction_type': 'purchase',
                 'description': description,
-                'package_id': package_id
+                'package_id': package_id,
+                'balance_after': new_tokens  # 添加余额字段
             }
             
             transaction_response = self.client.table('token_transactions').insert(transaction_data).execute()
@@ -354,7 +355,8 @@ class DatabaseService:
                 'amount': -amount,  # 负数表示消耗
                 'description': description,
                 'generation_id': generation_id,
-                'transaction_type': 'consumption'
+                'transaction_type': 'consumption',
+                'balance_after': new_tokens  # 添加余额字段
             }
             
             try:

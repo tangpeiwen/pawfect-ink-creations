@@ -12,10 +12,6 @@ class ZpayService:
         self.pkey = settings.ZPAY_PKEY
         self.logger = logging.getLogger(__name__)
         
-        # 配置请求超时和重试
-        self.timeout = 30  # 30秒超时
-        self.max_retries = 3  # 最大重试次数
-        
         # 验证必需的配置
         if not self.pid or not self.pkey:
             raise ValueError("Zpay配置缺失：请设置ZPAY_PID和ZPAY_PKEY环境变量")
@@ -99,81 +95,32 @@ class ZpayService:
         # 生成签名
         params["sign"] = self._generate_sign(params)
         
-        # 重试机制
-        last_error = None
-        for attempt in range(self.max_retries):
-            try:
-                self.logger.info(f"尝试连接支付服务 (第{attempt + 1}次/共{self.max_retries}次): {self.api_url}/mapi.php")
+        try:
+            # 发起API支付请求
+            response = requests.post(f"{self.api_url}/mapi.php", data=params)
+            response.raise_for_status()
+            
+            # 解析响应
+            result = response.json()
+            if result.get("code") == 1:
+                return {
+                    "success": True,
+                    "pay_url": result.get("payurl"),
+                    "qrcode": result.get("qrcode"),
+                    "img": result.get("img"),
+                    "trade_no": result.get("trade_no")
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": result.get("msg", "支付下单失败")
+                }
                 
-                # 发起API支付请求，设置超时
-                response = requests.post(
-                    f"{self.api_url}/mapi.php", 
-                    data=params,
-                    timeout=self.timeout,
-                    headers={
-                        'User-Agent': 'Mozilla/5.0 (compatible; PawfectInk/1.0)',
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                )
-                response.raise_for_status()
-                
-                # 解析响应
-                result = response.json()
-                if result.get("code") == 1:
-                    self.logger.info(f"支付订单创建成功: {order_id}")
-                    return {
-                        "success": True,
-                        "pay_url": result.get("payurl"),
-                        "qrcode": result.get("qrcode"),
-                        "img": result.get("img"),
-                        "trade_no": result.get("trade_no")
-                    }
-                else:
-                    error_msg = result.get("msg", "支付下单失败")
-                    self.logger.error(f"支付服务返回错误: {error_msg}")
-                    return {
-                        "success": False,
-                        "message": error_msg
-                    }
-                    
-            except requests.exceptions.ConnectTimeout as e:
-                last_error = f"连接超时 (第{attempt + 1}次尝试): {str(e)}"
-                self.logger.warning(last_error)
-                if attempt < self.max_retries - 1:
-                    wait_time = (attempt + 1) * 2  # 递增等待时间
-                    self.logger.info(f"等待 {wait_time} 秒后重试...")
-                    time.sleep(wait_time)
-                    
-            except requests.exceptions.ConnectionError as e:
-                last_error = f"连接错误 (第{attempt + 1}次尝试): {str(e)}"
-                self.logger.warning(last_error)
-                if attempt < self.max_retries - 1:
-                    wait_time = (attempt + 1) * 2
-                    self.logger.info(f"等待 {wait_time} 秒后重试...")
-                    time.sleep(wait_time)
-                    
-            except requests.exceptions.Timeout as e:
-                last_error = f"请求超时 (第{attempt + 1}次尝试): {str(e)}"
-                self.logger.warning(last_error)
-                if attempt < self.max_retries - 1:
-                    wait_time = (attempt + 1) * 2
-                    self.logger.info(f"等待 {wait_time} 秒后重试...")
-                    time.sleep(wait_time)
-                    
-            except Exception as e:
-                last_error = f"未知错误 (第{attempt + 1}次尝试): {str(e)}"
-                self.logger.error(last_error)
-                if attempt < self.max_retries - 1:
-                    wait_time = (attempt + 1) * 2
-                    self.logger.info(f"等待 {wait_time} 秒后重试...")
-                    time.sleep(wait_time)
-        
-        # 所有重试都失败了
-        self.logger.error(f"支付服务连接失败，已重试 {self.max_retries} 次")
-        return {
-            "success": False,
-            "message": f"支付服务暂时不可用，请稍后重试。详细错误: {last_error}"
-        }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"支付请求失败: {str(e)}"
+            }
     
     def verify_notify(self, notify_params: Dict) -> bool:
         """验证支付回调通知"""
