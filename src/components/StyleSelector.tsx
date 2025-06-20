@@ -74,7 +74,7 @@ const StyleSelector = ({
             promptDescription: "粗线条手绘效果，线条不规则，带有铅笔或炭笔质感，简约但具有表现力，有意的粗糙感，线条有力"
           },
           {
-            id: "cartoon",
+            id: "ghibli",
             name: "吉卜力风",
             image: "/styles/ghibli.png", // 修正路径，使用public目录下的文件
             description: "吉卜力风格，温馨治愈的动画风格",

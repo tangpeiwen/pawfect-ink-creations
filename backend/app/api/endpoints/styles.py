@@ -24,8 +24,8 @@ STYLES = [
         # promptDescription="极其简约和扁平风格绘制，纯白背景上用粗黑线。宠物被描绘成非常小、可爱、卡通化，没有任何阴影或阴影细节。"
     ),
     Style(
-        id="cartoon",
-        name="Q版卡通风",
+        id="ghibli",
+        name="吉卜力风",
         description="吉卜力风格，温馨治愈的动画风格",
         previewUrl="/styles/ghibli.png",
         promptDescription="吉卜力风格，采用宫崎骏动画的艺术风格，线条柔和流畅，色彩温暖自然，具有手绘水彩质感，整体风格温馨治愈，充满童真色彩。"

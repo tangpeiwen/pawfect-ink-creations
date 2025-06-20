@@ -58,7 +58,7 @@ async def generate_sticker_with_custom_api(
         timestamp = str(int(time.time()))
         
         # 检查是否为Q版卡通风格（使用吉卜力风格）
-        is_ghibli_style = style_id == "cartoon"
+        is_ghibli_style = style_id == "ghibli"
         
         if is_ghibli_style:
             # Q版卡通风：使用吉卜力风格prompt，不使用参考图片

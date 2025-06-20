@@ -41,7 +41,7 @@ async def get_style_reference_images(style_id: str) -> List[Path]:
     style_file_mapping = {
         "watercolor": ["watercolor.jpg"],  # 蜡笔插画风
         "minimalist": ["minimalist.jpg"],   # 粗线条手绘风
-        "cartoon": ["cartoon.jpg"],      # Q版贴纸风
+        "ghibli": ["ghibli.png"],      # Q版贴纸风
         "detailed": ["detailed.jpg"]      # 细节写意风
     }
     
