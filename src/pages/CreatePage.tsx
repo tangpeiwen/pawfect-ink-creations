@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from 'react-router-dom';
 import { analyzePetImage } from '@/lib/openaiService';
-import { generateSticker, checkGenerationStatus, uploadImage } from '@/lib/api';
+import { generateSticker, checkGenerationStatus, uploadImage, getGenerationHistory } from '@/lib/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -45,6 +45,48 @@ const CreatePage = () => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadError, setUploadError] = useState<string>("");
+
+  // 添加历史生成记录状态
+  const [historyImages, setHistoryImages] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const [historyError, setHistoryError] = useState<string>("");
+
+  // 获取历史生成记录
+  const fetchHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      setHistoryError("");
+      
+      const historyData = await getGenerationHistory(10, 0); // 获取最近10条记录
+      
+      if (historyData.success && historyData.history) {
+        // 过滤出已完成且有结果URL的记录
+        const completedHistory = historyData.history
+          .filter((item: any) => item.status === 'completed')
+          .map((item: any) => ({
+            id: item.id,
+            resultUrl: item.result_url,
+            createdAt: item.created_at,
+            styleId: item.style_id,
+            title: item.title || '未命名作品'
+          }))
+          .filter((item: any) => item.resultUrl); // 确保有结果URL
+        
+        setHistoryImages(completedHistory);
+        console.log('获取到历史记录:', completedHistory.length, '条');
+      }
+    } catch (error) {
+      console.error('获取历史记录失败:', error);
+      setHistoryError(error instanceof Error ? error.message : '获取历史记录失败');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // 组件加载时获取历史记录
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   // 处理Token不足的情况
   const handleTokenInsufficient = (errorMessage: string) => {
@@ -272,6 +314,11 @@ const CreatePage = () => {
                 
                 console.log('结果设置完成，resultImages应该更新为:', [statusResult.resultUrl]);
                 toast.success("贴纸生成完成！");
+                
+                // 刷新历史记录，显示新生成的图片
+                setTimeout(() => {
+                  fetchHistory();
+                }, 1000); // 延迟1秒刷新，确保后端数据已保存
               } else if (statusResult.status === 'failed') {
                 setIsGenerating(false);
                 setGenerationProgress(0);
@@ -628,6 +675,94 @@ const CreatePage = () => {
                         />
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 历史生成记录展示 */}
+              {historyImages.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-display font-medium mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pet-pink">
+                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                      <path d="M21 3v5h-5"></path>
+                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                      <path d="M3 21v-5h5"></path>
+                    </svg>
+                    您的历史作品
+                    <span className="text-sm text-gray-500 font-normal">({historyImages.length})</span>
+                  </h3>
+                  
+                  {isLoadingHistory ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pet-pink"></div>
+                    </div>
+                  ) : historyError ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-500 mb-2">{historyError}</p>
+                      <Button onClick={fetchHistory} variant="outline" size="sm">
+                        重新获取
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {historyImages.map((historyItem, index) => (
+                        <div 
+                          key={historyItem.id}
+                          className="group cursor-pointer border-2 border-transparent hover:border-pet-pink/50 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg"
+                          onClick={() => {
+                            // 点击历史图片时，将其设置为当前结果
+                            setResultImages([historyItem.resultUrl]);
+                            setSelectedResultIndex(0);
+                            toast.success("已选择历史作品");
+                          }}
+                        >
+                          <div className="relative">
+                            <img 
+                              src={historyItem.resultUrl} 
+                              alt={historyItem.title}
+                              className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200"></div>
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <p className="text-white text-xs truncate">{historyItem.title}</p>
+                              <p className="text-white/80 text-xs">
+                                {new Date(historyItem.createdAt).toLocaleDateString('zh-CN')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="mt-4 text-center">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={fetchHistory}
+                      disabled={isLoadingHistory}
+                    >
+                      {isLoadingHistory ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          刷新中...
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                            <path d="M21 3v5h-5"></path>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                            <path d="M3 21v-5h5"></path>
+                          </svg>
+                          刷新历史记录
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}

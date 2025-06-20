@@ -150,11 +150,41 @@ class DatabaseService:
             logger.error(f"Error updating generation: {e}")
             return None
     
-    async def get_user_generations(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    async def get_user_generations(self, user_id: str, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
         """获取用户的生成历史"""
         try:
-            response = self.client.table('generations').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
-            return response.data or []
+            # 使用连接查询获取生成记录和结果URL
+            response = (self.client.table('generations')
+                       .select('''
+                           *,
+                           generation_results (
+                               result_url,
+                               created_at
+                           )
+                       ''')
+                       .eq('user_id', user_id)
+                       .order('created_at', desc=True)
+                       .range(offset, offset + limit - 1)
+                       .execute())
+            
+            # 处理查询结果，将generation_results中的result_url提取到主记录中
+            processed_data = []
+            for generation in response.data or []:
+                # 复制生成记录
+                processed_generation = dict(generation)
+                
+                # 如果有generation_results，取第一个结果的URL
+                if generation.get('generation_results') and len(generation['generation_results']) > 0:
+                    processed_generation['result_url'] = generation['generation_results'][0]['result_url']
+                else:
+                    processed_generation['result_url'] = None
+                
+                # 移除嵌套的generation_results
+                processed_generation.pop('generation_results', None)
+                
+                processed_data.append(processed_generation)
+            
+            return processed_data
         except Exception as e:
             logger.error(f"Error getting user generations: {e}")
             return []

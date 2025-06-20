@@ -26,9 +26,9 @@ STYLES = [
     Style(
         id="ghibli",
         name="吉卜力风",
-        description="吉卜力风格，温馨治愈的动画风格",
+        description="吉卜力风，温馨治愈的动画风格",
         previewUrl="/styles/ghibli.png",
-        promptDescription="吉卜力风格，采用宫崎骏动画的艺术风格，线条柔和流畅，色彩温暖自然，具有手绘水彩质感，整体风格温馨治愈，充满童真色彩。"
+        promptDescription="吉卜力风格，采用宫崎骏动画的艺术风格，整体风格温馨治愈，充满童真色彩。"
     ),
     Style(
         id="detailed",

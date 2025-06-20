@@ -403,3 +403,52 @@ export const checkGenerationStatus = async (generationId: string) => {
     };
   }
 };
+
+/**
+ * 获取用户的生成历史
+ * @param {number} limit - 每页数量，默认10
+ * @param {number} offset - 偏移量，默认0
+ * @returns {Promise<Object>} 生成历史列表
+ */
+export const getGenerationHistory = async (limit: number = 10, offset: number = 0) => {
+  try {
+    console.log('=== 获取生成历史 ===');
+    console.log('参数:', { limit, offset });
+    
+    const historyUrl = buildApiUrl(`/generate/history?limit=${limit}&offset=${offset}`);
+    const authHeaders = await getAuthHeaders();
+    
+    const response = await fetch(historyUrl, {
+      method: 'GET',
+      headers: authHeaders,
+      credentials: 'include'
+    });
+
+    console.log('历史记录请求响应状态:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('获取历史记录失败:', errorText);
+      
+      if (response.status === 401) {
+        throw new Error('认证失败，请重新登录');
+      } else if (response.status === 403) {
+        throw new Error('权限不足');
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    }
+
+    const data = await response.json();
+    console.log('历史记录数据:', data);
+    
+    if (!data.success) {
+      throw new Error(data.message || '获取历史记录失败');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('获取生成历史失败:', error);
+    throw error;
+  }
+};

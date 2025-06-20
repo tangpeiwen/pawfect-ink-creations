@@ -32,7 +32,7 @@ async def generate_sticker_with_custom_api(
     """
     使用自定义API生成宠物简笔画贴纸
     采用新方案：用户图片 + 风格参考图片 + 文字描述
-    对于Q版卡通风，使用纯文字描述（吉卜力风格）
+    对于吉卜力风，使用纯文字描述（吉卜力风格）
     
     Args:
         user_image_id: 用户上传的图片ID
@@ -71,7 +71,7 @@ async def generate_sticker_with_custom_api(
 
 【吉卜力风格要求】
 请根据用户上传的图片生成一组吉卜力风格的贴纸，具体要求如下：
-- 采用宫崎骏动画的艺术风格，线条柔和流畅
+- 采用宫崎骏动画的艺术风格
 - 保持宠物的特征
 
 【图片分析】
@@ -85,7 +85,7 @@ async def generate_sticker_with_custom_api(
 - 保持宠物的关键特征和个性
 - 确保背景是白色
 - 适合制作成贴纸的封闭轮廓设计
-- 每个贴纸大小一致，风格统一
+- 每个贴纸大小一致
 
 [会话ID: {session_id}]
             """
