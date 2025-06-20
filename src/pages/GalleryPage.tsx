@@ -9,7 +9,7 @@ const GalleryPage = () => {
       style: "粗线条手绘风", 
       petPhoto: "/images/小拼.png",
       tattooDesign: "/images/小拼2.png",
-      description: "小拼是一个胖胖公主，所以着重表现了“身体圆”"
+      description: "小拼是一个胖胖公主，所以着重表现了\"身体圆\""
     },
     { 
       id: 2, 
@@ -17,7 +17,7 @@ const GalleryPage = () => {
       style: "蜡笔插画风", 
       petPhoto: "/images/二猫.png",
       tattooDesign: "/images/二猫2.png",
-      description: "二猫有可爱的对眼，所以添加了“猫咪是对眼”的自定义特征"
+      description: "二猫有可爱的对眼，所以添加了\"猫咪是对眼\"的自定义特征"
     },
     { 
       id: 3, 
@@ -72,6 +72,23 @@ const GalleryPage = () => {
           <p className="text-gray-600 max-w-2xl mx-auto">
             浏览我们的用户已经生成的宠物纹身贴作品，获取灵感为您的爱宠创作
           </p>
+          
+          {/* 温馨提示 */}
+          <div className="mt-6 mx-auto max-w-3xl">
+            <div className="bg-pet-yellow/10 border border-pet-yellow/30 rounded-2xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <PawPrint className="h-5 w-5 text-pet-orange" />
+                </div>
+                <div className="text-left">
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    <span className="font-semibold text-pet-orange">💡 温馨提示：</span>
+                    AI生成具有一定随机性，每次生成的效果可能不同。如果首次生成的结果不够满意，建议多尝试几次，以获得更理想的纹身贴设计效果。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
