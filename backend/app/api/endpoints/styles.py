@@ -34,7 +34,7 @@ STYLES = [
         id="detailed",
         name="细节写意风",
         description="细节刻画细腻,强烈线条感",
-        previewUrl="/styles/des.jpg",
+        previewUrl="/styles/detailed.jpg",
         promptDescription="简洁线稿风格，只用轮廓线条勾勒，不填充颜色，线条清晰流畅，平面化设计，白色背景，线条感强但依旧保留简笔画风格，保留丰富体态结构，细节刻画细腻"
     )
 ]
