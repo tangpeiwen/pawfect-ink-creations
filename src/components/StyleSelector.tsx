@@ -75,10 +75,10 @@ const StyleSelector = ({
           },
           {
             id: "cartoon",
-            name: "Q版贴纸风",
-            image: "/styles/cartoon.jpg", // 修正路径，使用public目录下的文件
-            description: "表情Q萌的卡通风格",
-            promptDescription: "Q版贴纸风格，简笔画线稿，手绘可爱效果，略微夸张的特征，线条粗细变化，平面化设计，适合贴纸的封闭轮廓"
+            name: "吉卜力风",
+            image: "/styles/ghibli.png", // 修正路径，使用public目录下的文件
+            description: "吉卜力风格，温馨治愈的动画风格",
+            promptDescription: "吉卜力风格，采用宫崎骏动画的艺术风格，线条柔和流畅，色彩温暖自然，充满童真色彩。"
           },
           {
             id: "des",
