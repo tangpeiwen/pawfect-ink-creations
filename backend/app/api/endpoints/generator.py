@@ -140,10 +140,14 @@ async def generate_sticker_background(
         
         style_prompt = style.promptDescription
         
-        # 获取风格参考图片
-        style_references = await get_style_reference_images(request.styleId)
-        if not style_references:
-            raise Exception(f"找不到风格参考图片: {request.styleId}")
+        # 获取风格参考图片（Q版卡通风除外，因为它使用吉卜力风格不需要参考图片）
+        style_references = []
+        if request.styleId != "cartoon":
+            style_references = await get_style_reference_images(request.styleId)
+            if not style_references:
+                raise Exception(f"找不到风格参考图片: {request.styleId}")
+        else:
+            logger.info("Q版卡通风使用吉卜力风格，跳过获取风格参考图片")
         
         # 更新进度：准备生成参数
         await db_service.update_generation(generation_id, GenerationUpdate(progress=30))
@@ -195,7 +199,8 @@ async def generate_sticker_background(
             style_prompt=style_prompt,
             image_analysis=image_analysis,
             emphasis_instructions=emphasis_instructions,
-            generation_id=generation_id
+            generation_id=generation_id,
+            style_id=request.styleId
         )
         
         # 更新进度：生成完成

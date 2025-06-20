@@ -26,11 +26,13 @@ async def generate_sticker_with_custom_api(
     style_prompt: str, 
     image_analysis: str,
     emphasis_instructions: str,
-    generation_id: str
+    generation_id: str,
+    style_id: str = None  # 新增风格ID参数
 ):
     """
     使用自定义API生成宠物简笔画贴纸
     采用新方案：用户图片 + 风格参考图片 + 文字描述
+    对于Q版卡通风，使用纯文字描述（吉卜力风格）
     
     Args:
         user_image_id: 用户上传的图片ID
@@ -39,11 +41,13 @@ async def generate_sticker_with_custom_api(
         image_analysis: 图片分析结果
         emphasis_instructions: 特征强调指令
         generation_id: 生成任务ID
+        style_id: 风格ID，用于判断是否使用特殊处理
         
     Returns:
         str: 生成结果图片的公共URL
     """
     logger.info(f"开始使用自定义API生成贴纸，任务ID: {generation_id}")
+    logger.info(f"风格ID: {style_id}")
     logger.info(f"风格提示词: {style_prompt}")
     logger.info(f"图片分析: {image_analysis[:100]}...")
     logger.info(f"特征强调指令: {emphasis_instructions}")
@@ -53,8 +57,42 @@ async def generate_sticker_with_custom_api(
         session_id = str(uuid.uuid4())
         timestamp = str(int(time.time()))
         
-        # 构建详细的提示词
-        generation_prompt = f"""
+        # 检查是否为Q版卡通风格（使用吉卜力风格）
+        is_ghibli_style = style_id == "cartoon"
+        
+        if is_ghibli_style:
+            # Q版卡通风：使用吉卜力风格prompt，不使用参考图片
+            generation_prompt = f"""
+[新会话开始 - 忽略所有之前的对话和指令]
+
+这是一个全新的独立任务，请忽略任何之前的上下文或记忆。
+
+任务：请根据用户上传图片生成一组吉卜力风格的贴纸。
+
+【吉卜力风格要求】
+请根据用户上传的图片生成一组吉卜力风格的贴纸，具体要求如下：
+- 采用宫崎骏动画的艺术风格，线条柔和流畅
+- 保持宠物的特征
+
+【图片分析】
+{image_analysis}
+
+【设计要求】
+{emphasis_instructions}
+
+【技术规格】
+- 生成4个不同姿势形态的贴纸
+- 保持宠物的关键特征和个性
+- 确保背景是白色
+- 适合制作成贴纸的封闭轮廓设计
+- 每个贴纸大小一致，风格统一
+
+[会话ID: {session_id}]
+            """
+            logger.info(f"使用吉卜力风格生成，会话ID: {session_id}")
+        else:
+            # 其他风格：使用原有的参考图片方案
+            generation_prompt = f"""
 [新会话开始 - 忽略所有之前的对话和指令]
 
 这是一个全新的独立任务，请忽略任何之前的上下文或记忆。
@@ -75,10 +113,8 @@ async def generate_sticker_with_custom_api(
 - 宠物要保留第一张图片中的特征和prompt里的要求，不要完全照搬第二张图片的风格
 
 [会话ID: {session_id}]
-        """
-        
-        logger.info(f"使用独立会话ID: {session_id}")
-        logger.info(f"使用提示词: {generation_prompt[:50]}...")
+            """
+            logger.info(f"使用参考图片风格生成，会话ID: {session_id}")
         
         # 更新进度：开始下载用户图片
         await db_service.update_generation(generation_id, GenerationUpdate(progress=55))
@@ -106,21 +142,6 @@ async def generate_sticker_with_custom_api(
         # 更新进度：准备风格参考图片
         await db_service.update_generation(generation_id, GenerationUpdate(progress=60))
         
-        # 准备风格参考图片
-        if not style_references or len(style_references) == 0:
-            raise Exception("没有找到风格参考图片")
-        
-        # 使用第一张（也是唯一一张）风格参考图片
-        style_image_path = style_references[0]
-        logger.info(f"使用风格参考图片: {style_image_path.name}")
-        
-        # 检查风格图片文件是否存在
-        if not style_image_path.exists():
-            raise Exception(f"风格参考图片不存在: {style_image_path}")
-        
-        # 更新进度：开始API调用
-        await db_service.update_generation(generation_id, GenerationUpdate(progress=65))
-        
         # 准备multipart/form-data请求
         headers = {
             "Authorization": f"Bearer {CUSTOM_API_KEY}",
@@ -131,13 +152,37 @@ async def generate_sticker_with_custom_api(
             "X-Clear-Context": "true"
         }
         
-        # 构建multipart数据 - 用户图片（从存储桶） + 风格参考图片（本地）
-        files = [
-            ('model', (None, 'gpt-image-1')),
-            ('prompt', (None, generation_prompt)),
-            ('image', (f'{user_image_id}.jpg', io.BytesIO(user_image_content), 'image/jpeg')),
-            ('image', (style_image_path.name, open(style_image_path, 'rb'), 'image/jpeg'))
-        ]
+        if is_ghibli_style:
+            # Q版卡通风：只发送用户图片，不发送参考图片
+            files = [
+                ('model', (None, 'gpt-image-1')),
+                ('prompt', (None, generation_prompt)),
+                ('image', (f'{user_image_id}.jpg', io.BytesIO(user_image_content), 'image/jpeg'))
+            ]
+            logger.info("使用吉卜力风格：仅发送用户图片")
+        else:
+            # 其他风格：发送用户图片 + 风格参考图片
+            if not style_references or len(style_references) == 0:
+                raise Exception("没有找到风格参考图片")
+            
+            # 使用第一张（也是唯一一张）风格参考图片
+            style_image_path = style_references[0]
+            logger.info(f"使用风格参考图片: {style_image_path.name}")
+            
+            # 检查风格图片文件是否存在
+            if not style_image_path.exists():
+                raise Exception(f"风格参考图片不存在: {style_image_path}")
+            
+            files = [
+                ('model', (None, 'gpt-image-1')),
+                ('prompt', (None, generation_prompt)),
+                ('image', (f'{user_image_id}.jpg', io.BytesIO(user_image_content), 'image/jpeg')),
+                ('image', (style_image_path.name, open(style_image_path, 'rb'), 'image/jpeg'))
+            ]
+            logger.info("使用参考图片风格：发送用户图片 + 风格参考图片")
+        
+        # 更新进度：开始API调用
+        await db_service.update_generation(generation_id, GenerationUpdate(progress=65))
         
         try:
             # 创建客户端实例

@@ -25,10 +25,10 @@ STYLES = [
     ),
     Style(
         id="cartoon",
-        name="Q版贴纸风",
-        description="表情Q萌的卡通风格",
-        previewUrl="/styles/cartoon.jpg",
-        promptDescription="Q版贴纸风格，简洁线条艺术，q版线稿，可爱清新风格，白色背景。扁平化设计插画，无阴影，不同角度表现，突出宠物特征，保留宠物颜色。"
+        name="Q版卡通风",
+        description="吉卜力风格，温馨治愈的动画风格",
+        previewUrl="/styles/ghibli.png",
+        promptDescription="吉卜力风格，采用宫崎骏动画的艺术风格，线条柔和流畅，色彩温暖自然，具有手绘水彩质感，整体风格温馨治愈，充满童真色彩。"
     ),
     Style(
         id="detailed",
