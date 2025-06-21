@@ -5,6 +5,7 @@ import UploadSection from "@/components/UploadSection";
 import StyleSelector from "@/components/StyleSelector";
 import FeatureSelector from "@/components/FeatureSelector";
 import GeneratorResult from "@/components/GeneratorResult";
+import PawLoadingAnimation from "@/components/PawLoadingAnimation";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from 'react-router-dom';
@@ -492,15 +493,10 @@ const CreatePage = () => {
                 <DialogTitle className="text-center">AI正在生成您的宠物贴纸</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col items-center space-y-4 py-6">
-                <div className="w-20 h-20 rounded-full bg-gradient-pet animate-pulse-soft flex items-center justify-center">
-                  <svg className="animate-spin text-white w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
+                <PawLoadingAnimation />
                 <div className="text-center space-y-2">
                   <p className="text-lg font-medium">{generationStatus}</p>
-                  <p className="text-sm text-gray-500">这可能需要20-30秒，请耐心等待</p>
+                  <p className="text-sm text-gray-500">这可能需要1-2分钟，请耐心等待</p>
                 </div>
                 <div className="w-full space-y-2">
                   <div className="flex justify-between text-sm">

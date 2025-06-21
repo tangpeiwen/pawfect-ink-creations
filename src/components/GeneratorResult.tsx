@@ -49,7 +49,7 @@ const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: Gene
                 </svg>
               </div>
               <p className="text-lg font-display font-medium text-center">AI正在为您生成宠物贴纸...</p>
-              <p className="text-sm text-gray-500 text-center mt-2">这可能需要20-30秒，请耐心等待</p>
+              <p className="text-sm text-gray-500 text-center mt-2">这可能需要1-2分钟，请耐心等待</p>
             </div>
           ) : resultImage ? (
             <div className="p-4">
