@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { compressImage } from "@/lib/imageUtils";
 
 interface UploadSectionProps {
   onImageUploaded: (image: File) => void;
@@ -11,6 +12,7 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [compressionStatus, setCompressionStatus] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -40,7 +42,7 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
     }
   };
 
-  const handleFiles = (files: FileList) => {
+  const handleFiles = async (files: FileList) => {
     if (isProcessing) {
       toast.warning("正在处理上一张图片，请稍等");
       return;
@@ -50,24 +52,57 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
     console.log('处理文件:', file.name, '类型:', file.type, '大小:', file.size);
     
     // 验证文件类型
-    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/heic"];
     
     if (!validTypes.includes(file.type)) {
       console.error('文件类型不支持:', file.type);
-      toast.error("只支持JPG, PNG, WEBP格式的图片!");
+      toast.error("支持JPG, PNG, WEBP, HEIC格式的图片!");
       return;
     }
     
-    // 验证文件大小
-    if (file.size > 10 * 1024 * 1024) {
+    // 验证文件大小 - 30MB限制，支持iPhone ProRAW
+    if (file.size > 30 * 1024 * 1024) {
       console.error('文件大小超出限制:', file.size);
-      toast.error("图片大小不能超过10MB!");
+      toast.error("图片大小不能超过30MB!");
       return;
     }
     
     setIsProcessing(true);
+    setCompressionStatus("");
     
     try {
+      let processedFile = file;
+      
+      // 如果文件大于2MB，进行压缩
+      if (file.size > 1.5 * 1024 * 1024) {
+        setCompressionStatus("正在压缩图片以提高上传速度...");
+        console.log('文件较大，开始压缩:', file.size);
+        
+        try {
+          const compressedBlob = await compressImage(file, 1200); // 压缩到最大1200px
+          const compressedFile = new File([compressedBlob], file.name, {
+            type: file.type,
+            lastModified: Date.now(),
+          });
+          
+          console.log('压缩完成:', {
+            original: file.size,
+            compressed: compressedFile.size,
+            ratio: (compressedFile.size / file.size * 100).toFixed(1) + '%'
+          });
+          
+          processedFile = compressedFile;
+          setCompressionStatus(`压缩完成 (${(file.size / 1024 / 1024).toFixed(1)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(1)}MB)`);
+          
+          // 显示压缩状态一段时间
+          setTimeout(() => setCompressionStatus(""), 2000);
+        } catch (compressionError) {
+          console.warn('压缩失败，使用原文件:', compressionError);
+          setCompressionStatus("压缩失败，使用原图上传");
+          setTimeout(() => setCompressionStatus(""), 2000);
+        }
+      }
+      
       // Create preview
       const reader = new FileReader();
       reader.onload = () => {
@@ -82,15 +117,16 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
         setIsProcessing(false);
       };
       
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
       
-      // Call the callback
+      // Call the callback with processed file
       console.log('调用onImageUploaded回调');
-      onImageUploaded(file);
+      onImageUploaded(processedFile);
     } catch (error) {
       console.error('处理文件时出错:', error);
       toast.error("处理图片时出错");
       setIsProcessing(false);
+      setCompressionStatus("");
     }
   };
 
@@ -157,7 +193,7 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
               <input 
                 ref={inputRef}
                 type="file" 
-                accept="image/jpeg,image/png,image/jpg,image/webp"
+                accept="image/jpeg,image/png,image/jpg,image/webp,image/heic"
                 className="hidden" 
                 onChange={handleChange}
                 disabled={isProcessing}
@@ -179,8 +215,16 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
                   {isProcessing ? "正在处理图片..." : "上传您的宠物照片"}
                 </p>
                 <p className="text-sm text-gray-500 text-center mt-1 mb-4">
-                  {isProcessing ? "请稍等片刻" : "支持JPG, PNG, WEBP格式，最大10MB"}
+                  {isProcessing ? 
+                    (compressionStatus || "请稍等片刻") : 
+                    "支持JPG, PNG, WEBP, HEIC格式，最大30MB"
+                  }
                 </p>
+                {compressionStatus && (
+                  <p className="text-xs text-blue-600 text-center mb-2">
+                    {compressionStatus}
+                  </p>
+                )}
                 <Button 
                   type="button"
                   className={`pet-button px-6 py-2 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}

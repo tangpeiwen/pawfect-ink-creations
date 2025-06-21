@@ -61,30 +61,78 @@ async def upload_image(
         # 读取图片内容
         try:
             logger.info("开始读取上传文件内容")
+            
+            # 分块读取大文件，避免内存溢出（简化版）
             content = await image.read()
             content_size = len(content)
-            logger.info(f"读取图片内容成功，实际大小: {content_size} 字节")
             
-            # 验证文件大小
-            max_size = 10 * 1024 * 1024  # 10MB
+            # 实时检查文件大小
+            max_size = settings.MAX_UPLOAD_SIZE
             if content_size > max_size:
                 logger.warning(f"文件大小超出限制: {content_size} > {max_size}")
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"文件大小超出限制，最大允许10MB，实际大小: {content_size / 1024 / 1024:.2f}MB"
+                    detail=f"文件大小超出限制，最大允许{max_size // (1024 * 1024)}MB，实际大小: {content_size / 1024 / 1024:.2f}MB"
                 )
+            
+            logger.info(f"读取图片内容成功，实际大小: {content_size} 字节")
             
             # 验证内容是否为有效图片
             try:
                 logger.info("验证图片内容")
                 img_test = Image.open(io.BytesIO(content))
-                logger.info(f"图片验证成功: 模式={img_test.mode}, 尺寸={img_test.size}, 格式={img_test.format}")
+                
+                # 获取图片基本信息
+                img_mode = img_test.mode
+                img_size = img_test.size
+                img_format = img_test.format
+                
+                logger.info(f"图片基本信息: 模式={img_mode}, 尺寸={img_size}, 格式={img_format}")
+                
+                # 检查图片是否有效
+                try:
+                    img_test.verify()  # 验证图片完整性
+                    logger.info("图片完整性验证通过")
+                except Exception as verify_error:
+                    logger.error(f"图片完整性验证失败: {str(verify_error)}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"图片文件损坏或不完整: {str(verify_error)}"
+                    )
+                
+                # 检查图片尺寸是否合理
+                if img_size[0] < 32 or img_size[1] < 32:
+                    logger.error(f"图片尺寸太小: {img_size}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"图片尺寸太小，最小支持32x32像素，当前: {img_size[0]}x{img_size[1]}"
+                    )
+                
+                if img_size[0] > 8192 or img_size[1] > 8192:
+                    logger.error(f"图片尺寸太大: {img_size}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"图片尺寸太大，最大支持8192x8192像素，当前: {img_size[0]}x{img_size[1]}"
+                    )
+                
+                # 检查图片模式是否支持
+                unsupported_modes = ['1', 'P']  # 1位黑白图和调色板模式可能有问题
+                if img_mode in unsupported_modes:
+                    logger.warning(f"图片模式可能不兼容: {img_mode}")
+                    # 不直接报错，让预处理尝试转换
+                
+                logger.info(f"图片验证成功: 模式={img_mode}, 尺寸={img_size}, 格式={img_format}")
                 img_test.close()  # 释放资源
+                
+            except HTTPException:
+                # 重新抛出HTTP异常
+                raise
             except Exception as img_test_error:
                 logger.error(f"图片验证失败: {str(img_test_error)}")
+                logger.error(f"图片验证错误类型: {type(img_test_error).__name__}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"上传的不是有效图片: {str(img_test_error)}"
+                    detail=f"上传的不是有效图片或图片格式不支持: {str(img_test_error)}"
                 )
         except HTTPException:
             # 重新抛出HTTP异常
@@ -259,21 +307,91 @@ def preprocess_image(content: bytes) -> bytes:
         bytes: 处理后的图片字节数据
     """
     try:
+        logger.info("开始图片预处理")
+        
         with Image.open(io.BytesIO(content)) as img:
-            # 如果不是RGB模式，转换为RGB
-            if img.mode != 'RGB':
+            logger.info(f"原始图片信息: 模式={img.mode}, 尺寸={img.size}, 格式={img.format}")
+            
+            # 处理特殊的图片模式
+            original_mode = img.mode
+            
+            # 如果是调色板模式，先转换为RGBA以保持透明度
+            if img.mode == 'P':
+                logger.info("检测到调色板模式，转换为RGBA")
+                if 'transparency' in img.info:
+                    img = img.convert('RGBA')
+                else:
+                    img = img.convert('RGB')
+            # 如果是1位黑白图，转换为RGB
+            elif img.mode == '1':
+                logger.info("检测到1位黑白模式，转换为RGB")
                 img = img.convert('RGB')
+            # 如果是灰度图，转换为RGB
+            elif img.mode == 'L':
+                logger.info("检测到灰度模式，转换为RGB")
+                img = img.convert('RGB')
+            # 如果是RGBA模式，需要处理透明度
+            elif img.mode == 'RGBA':
+                logger.info("检测到RGBA模式，处理透明度")
+                # 创建白色背景
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                # 将RGBA图片粘贴到白色背景上
+                background.paste(img, mask=img.split()[-1] if len(img.split()) == 4 else None)
+                img = background
+            # 如果不是RGB模式，转换为RGB
+            elif img.mode != 'RGB':
+                logger.info(f"转换图片模式: {img.mode} -> RGB")
+                img = img.convert('RGB')
+            
+            logger.info(f"模式转换完成: {original_mode} -> {img.mode}")
+            
+            # 检查转换后的图片
+            if img.size[0] == 0 or img.size[1] == 0:
+                raise ValueError("图片转换后尺寸为0")
             
             # 调整大小（如果太大的话）
             max_size = (1024, 1024)
+            original_size = img.size
+            
             if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+                logger.info(f"调整图片尺寸: {original_size} -> 最大{max_size}")
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                logger.info(f"尺寸调整完成: {original_size} -> {img.size}")
             
             # 保存为字节流
+            logger.info("保存处理后的图片")
             output = io.BytesIO()
-            img.save(output, format='JPEG', quality=85, optimize=True)
-            return output.getvalue()
+            
+            # 使用更保守的JPEG保存参数
+            save_params = {
+                'format': 'JPEG',
+                'quality': 85,
+                'optimize': True,
+                'progressive': True  # 渐进式JPEG
+            }
+            
+            # 如果图片很小，提高质量
+            if img.size[0] * img.size[1] < 100000:  # 小于100k像素
+                save_params['quality'] = 95
+                logger.info("小图片，提高JPEG质量到95")
+            
+            img.save(output, **save_params)
+            result = output.getvalue()
+            
+            logger.info(f"图片预处理完成: 原始大小={len(content)}, 处理后大小={len(result)}")
+            return result
             
     except Exception as e:
         logger.error(f"图片预处理失败: {str(e)}")
-        raise 
+        logger.error(f"错误类型: {type(e).__name__}")
+        logger.error(f"错误详情: {traceback.format_exc()}")
+        
+        # 提供更详细的错误信息
+        if "cannot write mode" in str(e).lower():
+            raise ValueError(f"图片格式不支持转换: {str(e)}")
+        elif "decoder" in str(e).lower():
+            raise ValueError(f"图片解码失败，可能文件损坏: {str(e)}")
+        elif "truncated" in str(e).lower():
+            raise ValueError(f"图片文件不完整: {str(e)}")
+        else:
+            raise ValueError(f"图片处理失败: {str(e)}") 
