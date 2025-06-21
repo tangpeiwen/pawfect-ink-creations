@@ -38,6 +38,10 @@ const CreatePage = () => {
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [generationStatus, setGenerationStatus] = useState<string>("");
   
+  // 添加生成任务ID状态，用于取消生成
+  const [currentGenerationId, setCurrentGenerationId] = useState<string>("");
+  const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  
   // 添加Token不足对话框状态
   const [showTokenDialog, setShowTokenDialog] = useState<boolean>(false);
   const [tokenErrorMessage, setTokenErrorMessage] = useState<string>("");
@@ -99,6 +103,26 @@ const CreatePage = () => {
   const goToPricing = () => {
     setShowTokenDialog(false);
     navigate('/pricing');
+  };
+
+  // 处理取消生成
+  const handleCancelGeneration = () => {
+    // 清除状态检查定时器
+    if (statusCheckInterval) {
+      clearInterval(statusCheckInterval);
+      setStatusCheckInterval(null);
+    }
+    
+    // 重置生成相关状态
+    setIsGenerating(false);
+    setGenerationProgress(0);
+    setGenerationStatus("");
+    setCurrentGenerationId("");
+    
+    // 显示取消提示
+    toast.info("已取消生成任务");
+    
+    console.log("用户取消了生成任务");
   };
 
   const handleImageUpload = async (file: File) => {
@@ -256,21 +280,24 @@ const CreatePage = () => {
       // 如果结果中包含generationId，则开始轮询状态
       if (result.generationId) {
         const generationId = result.generationId;
+        setCurrentGenerationId(generationId);
         console.log('开始轮询生成状态，generationId:', generationId);
         
         let pollCount = 0;
         const maxPollCount = 120; // 最多轮询2分钟（每秒一次）
         
         // 开始轮询生成状态 - 使用更高效的策略
-        const statusCheckInterval = setInterval(async () => {
+        const intervalId = setInterval(async () => {
           try {
             pollCount++;
             
             // 超时检查
             if (pollCount > maxPollCount) {
-              clearInterval(statusCheckInterval);
+              clearInterval(intervalId);
+              setStatusCheckInterval(null);
               setIsGenerating(false);
               setGenerationStatus("生成超时");
+              setCurrentGenerationId("");
               toast.error("生成时间过长，请稍后重试");
               return;
             }
@@ -301,7 +328,9 @@ const CreatePage = () => {
             
             // 如果完成或失败，清除定时器并设置结果
             if (statusResult.status === 'completed' || statusResult.status === 'failed') {
-              clearInterval(statusCheckInterval);
+              clearInterval(intervalId);
+              setStatusCheckInterval(null);
+              setCurrentGenerationId("");
               
               if (statusResult.status === 'completed' && statusResult.resultUrl) {
                 console.log('=== 设置生成结果 ===');
@@ -345,12 +374,17 @@ const CreatePage = () => {
             console.error('检查状态失败:', error);
             // 如果检查状态失败，继续尝试，但增加失败计数
             if (pollCount > maxPollCount * 0.8) { // 在最后20%的时间里如果一直失败就停止
-              clearInterval(statusCheckInterval);
+              clearInterval(intervalId);
+              setStatusCheckInterval(null);
+              setCurrentGenerationId("");
               setIsGenerating(false);
               toast.error('无法获取生成状态，请刷新页面重试');
             }
           }
         }, 1000);  // 改为每1秒检查一次，提供更及时的反馈
+        
+        // 保存定时器引用
+        setStatusCheckInterval(intervalId);
       } else if (result.images && result.images.length > 0) {
         // 如果直接返回了图片，则设置结果
         setResultImages(result.images);
@@ -487,7 +521,11 @@ const CreatePage = () => {
           </Dialog>
           
           {/* 生成进度对话框 */}
-          <Dialog open={isGenerating} onOpenChange={() => {}}>
+          <Dialog open={isGenerating} onOpenChange={(open) => {
+            if (!open) {
+              handleCancelGeneration();
+            }
+          }}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-center">AI正在生成您的宠物贴纸</DialogTitle>
@@ -506,6 +544,15 @@ const CreatePage = () => {
                   <Progress value={generationProgress} className="h-2" />
                 </div>
               </div>
+              <DialogFooter className="flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={handleCancelGeneration}
+                  className="w-full"
+                >
+                  取消生成
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
           
