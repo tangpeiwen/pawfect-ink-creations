@@ -201,8 +201,8 @@ const CreatePage = () => {
     // Start generation process
     setIsGenerating(true);
     
-    // 跳转到结果页面
-    setActiveStep("result");
+    // 不要立即跳转到结果页面，让进度弹窗在当前页面显示
+    // setActiveStep("result"); // 删除这行
     
     toast.info("AI正在努力生成您的宠物贴纸，请稍候...");
     
@@ -315,6 +315,9 @@ const CreatePage = () => {
                 console.log('结果设置完成，resultImages应该更新为:', [statusResult.resultUrl]);
                 toast.success("贴纸生成完成！");
                 
+                // 生成完成后跳转到结果页面
+                setActiveStep("result");
+                
                 // 刷新历史记录，显示新生成的图片
                 setTimeout(() => {
                   fetchHistory();
@@ -354,6 +357,9 @@ const CreatePage = () => {
         setGenerationProgress(100);
         setGenerationStatus("生成完成");
         setIsGenerating(false);
+        
+        // 生成完成后跳转到结果页面
+        setActiveStep("result");
         
         toast.success("贴纸生成完成！");
       } else {
