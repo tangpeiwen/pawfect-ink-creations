@@ -81,11 +81,11 @@ const StyleSelector = ({
             promptDescription: "吉卜力风格，采用宫崎骏动画的艺术风格，线条柔和流畅，色彩温暖自然，充满童真色彩。"
           },
           {
-            id: "des",
-            name: "细节写意风",
-            image: "/styles/detailed.jpg", // 修正路径，使用public目录下的文件，同时修正文件名
-            description: "细节刻画细腻，强烈线条感",
-            promptDescription: "细节写意风格，精细的线条变化，保留丰富的体态结构，细腻的纹理刻画，保持解剖学准确性但有艺术性简化"
+            id: "sanrio",
+            name: "Sanrio风",
+            image: "/styles/sanrio.jpg", // 修正路径，使用public目录下的文件
+            description: "三丽鸥风格，可爱卡通的日系风格",
+            promptDescription: "Sanrio风格，采用Hello Kitty等经典卡通角色的艺术风格，具有日系卡通的萌系特质，充满童趣可爱。"
           }
         ];
         

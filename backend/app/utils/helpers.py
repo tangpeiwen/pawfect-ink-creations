@@ -58,7 +58,7 @@ async def validate_generation_request(request: GenerationRequest, user_id: str) 
         )
     
     # 验证风格ID是否在支持列表中
-    valid_styles = ["watercolor", "minimalist", "ghibli", "detailed"]
+    valid_styles = ["watercolor", "minimalist", "ghibli", "sanrio"]
     if request.styleId not in valid_styles:
         logger.error(f"无效的风格ID: {request.styleId}")
         raise HTTPException(

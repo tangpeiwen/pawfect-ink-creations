@@ -31,11 +31,11 @@ STYLES = [
         promptDescription="吉卜力风格，采用宫崎骏动画的艺术风格，整体风格温馨治愈，充满童真色彩。"
     ),
     Style(
-        id="detailed",
-        name="细节写意风",
-        description="细节刻画细腻,强烈线条感",
-        previewUrl="/styles/detailed.jpg",
-        promptDescription="简洁线稿风格，只用轮廓线条勾勒，不填充颜色，线条清晰流畅，平面化设计，白色背景，线条感强但依旧保留简笔画风格，保留丰富体态结构，细节刻画细腻"
+        id="sanrio",
+        name="Q版卡通风",
+        description="三丽鸥风格，可爱卡通的日系风格",
+        previewUrl="/styles/sanrio.jpg",
+        promptDescription="Sanrio风格，采用Hello Kitty等经典卡通角色的艺术风格，线条简洁可爱，具有日系卡通的萌系特质，充满童趣和温暖感。"
     )
 ]
 

@@ -140,14 +140,15 @@ async def generate_sticker_background(
         
         style_prompt = style.promptDescription
         
-        # 获取风格参考图片（Q版卡通风除外，因为它使用吉卜力风格不需要参考图片）
+        # 获取风格参考图片（Q版卡通风和Sanrio风除外，因为它们使用纯文字描述不需要参考图片）
         style_references = []
-        if request.styleId != "ghibli":
+        if request.styleId not in ["ghibli", "sanrio"]:
             style_references = await get_style_reference_images(request.styleId)
             if not style_references:
                 raise Exception(f"找不到风格参考图片: {request.styleId}")
         else:
-            logger.info("Q版卡通风使用吉卜力风格，跳过获取风格参考图片")
+            style_name = "吉卜力风格" if request.styleId == "ghibli" else "Sanrio风格"
+            logger.info(f"{style_name}使用纯文字描述，跳过获取风格参考图片")
         
         # 更新进度：准备生成参数
         await db_service.update_generation(generation_id, GenerationUpdate(progress=30))

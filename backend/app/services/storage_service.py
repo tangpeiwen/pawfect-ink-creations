@@ -42,7 +42,7 @@ async def get_style_reference_images(style_id: str) -> List[Path]:
         "watercolor": ["watercolor.jpg"],  # 蜡笔插画风
         "minimalist": ["minimalist.jpg"],   # 粗线条手绘风
         "ghibli": ["ghibli.png"],      # Q版贴纸风
-        "detailed": ["detailed.jpg"]      # 细节写意风
+        "sanrio": ["sanrio.jpg"]      # 细节写意风
     }
     
     if style_id not in style_file_mapping:

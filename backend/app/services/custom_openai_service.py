@@ -57,8 +57,10 @@ async def generate_sticker_with_custom_api(
         session_id = str(uuid.uuid4())
         timestamp = str(int(time.time()))
         
-        # 检查是否为Q版卡通风格（使用吉卜力风格）
+        # 检查是否为特殊风格（使用纯文字描述，不使用参考图片）
         is_ghibli_style = style_id == "ghibli"
+        is_sanrio_style = style_id == "sanrio"
+        is_text_only_style = is_ghibli_style or is_sanrio_style
         
         if is_ghibli_style:
             # Q版卡通风：使用吉卜力风格prompt，不使用参考图片
@@ -90,6 +92,37 @@ async def generate_sticker_with_custom_api(
 [会话ID: {session_id}]
             """
             logger.info(f"使用吉卜力风格生成，会话ID: {session_id}")
+        elif is_sanrio_style:
+            # Sanrio风：使用Sanrio风格prompt，不使用参考图片
+            generation_prompt = f"""
+[新会话开始 - 忽略所有之前的对话和指令]
+
+这是一个全新的独立任务，请忽略任何之前的上下文或记忆。
+
+任务：请根据用户上传图片生成一组Sanrio风格的贴纸。
+
+【Sanrio风格要求】
+请根据用户上传的图片生成一组Sanrio风格的贴纸，具体要求如下：
+- 采用Hello Kitty,Cinnamoroll等经典Sanrio角色的艺术风格
+- 具有日系卡通的萌系特质,保持日系卡通的典型特征
+- 不要添加任何字样
+
+【图片分析】
+{image_analysis}
+
+【设计要求】
+{emphasis_instructions}
+
+【技术规格】
+- 生成4个不同姿势形态的贴纸
+- 保持宠物的关键特征和个性
+- 确保背景是白色或者透明
+- 适合制作成贴纸的封闭轮廓设计
+- 每个贴纸大小一致，风格统一
+
+[会话ID: {session_id}]
+            """
+            logger.info(f"使用Sanrio风格生成，会话ID: {session_id}")
         else:
             # 其他风格：使用原有的参考图片方案
             generation_prompt = f"""
@@ -152,14 +185,15 @@ async def generate_sticker_with_custom_api(
             "X-Clear-Context": "true"
         }
         
-        if is_ghibli_style:
-            # Q版卡通风：只发送用户图片，不发送参考图片
+        if is_text_only_style:
+            # 纯文字风格（吉卜力风格和Sanrio风格）：只发送用户图片，不发送参考图片
             files = [
                 ('model', (None, 'gpt-image-1')),
                 ('prompt', (None, generation_prompt)),
                 ('image', (f'{user_image_id}.jpg', io.BytesIO(user_image_content), 'image/jpeg'))
             ]
-            logger.info("使用吉卜力风格：仅发送用户图片")
+            style_name = "吉卜力风格" if is_ghibli_style else "Sanrio风格"
+            logger.info(f"使用{style_name}：仅发送用户图片")
         else:
             # 其他风格：发送用户图片 + 风格参考图片
             if not style_references or len(style_references) == 0:
