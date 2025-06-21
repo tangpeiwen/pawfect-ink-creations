@@ -2,21 +2,45 @@ import { motion, Variants } from "framer-motion";
 
 function PawLoadingAnimation() {
     const pawVariants: Variants = {
-        jump: {
-            y: -25,
+        hidden: {
+            opacity: 0,
+            scale: 0.3,
+            y: 10,
+        },
+        visible: {
+            opacity: 1,
+            scale: 1,
+            y: 0,
             transition: {
-                duration: 0.6,
+                duration: 0.4,
+                ease: "easeOut",
+            },
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.3,
+            y: -10,
+            transition: {
+                duration: 0.3,
+                ease: "easeIn",
+            },
+        },
+    };
+
+    const containerVariants: Variants = {
+        start: {
+            transition: {
+                staggerChildren: 0.6,
                 repeat: Infinity,
-                repeatType: "mirror",
-                ease: "easeInOut",
+                repeatDelay: 0.8,
             },
         },
     };
 
     const PawIcon = () => (
         <svg 
-            width="28" 
-            height="28" 
+            width="32" 
+            height="32" 
             viewBox="0 0 24 24" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
@@ -36,25 +60,47 @@ function PawLoadingAnimation() {
     return (
         <div className="flex justify-center items-center">
             <motion.div
-                animate="jump"
-                transition={{ staggerChildren: 0.15, staggerDirection: 1 }}
-                className="flex justify-center items-center gap-4"
+                variants={containerVariants}
+                initial="start"
+                animate="start"
+                className="flex justify-center items-center gap-6"
             >
                 <motion.div 
                     className="text-pet-pink drop-shadow-sm" 
                     variants={pawVariants}
+                    initial="hidden"
+                    animate={["visible", "exit"]}
+                    transition={{
+                        repeat: Infinity,
+                        repeatDelay: 1.4,
+                        delay: 0,
+                    }}
                 >
                     <PawIcon />
                 </motion.div>
                 <motion.div 
                     className="text-pet-peach drop-shadow-sm" 
                     variants={pawVariants}
+                    initial="hidden"
+                    animate={["visible", "exit"]}
+                    transition={{
+                        repeat: Infinity,
+                        repeatDelay: 1.4,
+                        delay: 0.6,
+                    }}
                 >
                     <PawIcon />
                 </motion.div>
                 <motion.div 
                     className="text-pet-yellow drop-shadow-sm" 
                     variants={pawVariants}
+                    initial="hidden"
+                    animate={["visible", "exit"]}
+                    transition={{
+                        repeat: Infinity,
+                        repeatDelay: 1.4,
+                        delay: 1.2,
+                    }}
                 >
                     <PawIcon />
                 </motion.div>
