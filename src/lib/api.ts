@@ -192,7 +192,7 @@ export const generateSticker = async (
     };
     
     console.log('=== generateSticker API调用 ===');
-    const generateUrl = buildApiUrl('/generate');
+    const generateUrl = buildApiUrl('/generate/generate');
     console.log('请求体:', JSON.stringify(requestBody, null, 2));
     
     const authHeaders = await getAuthHeaders();
@@ -342,7 +342,7 @@ export const checkGenerationStatus = async (generationId: string) => {
     console.log('=== 检查生成状态 ===');
     console.log('generationId:', generationId);
     
-    const statusUrl = buildApiUrl(`/status/${generationId}`);
+    const statusUrl = buildApiUrl(`/generate/status/${generationId}`);
     const authHeaders = await getAuthHeaders();
     
     const response = await fetch(statusUrl, {
