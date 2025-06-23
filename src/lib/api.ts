@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 // 使用相对路径，通过Vite代理访问API
 const API_BASE = import.meta.env.PROD 
-  ? 'https://api.pawfect.ink/api'  // 生产环境直接访问部署的API
+  ? (import.meta.env.VITE_API_BASE_URL || 'https://api.pawfect.ink') + '/api'  // 生产环境使用环境变量或默认值
   : '/api';  // 开发环境使用Vite代理
 
 // 导出API_BASE供其他模块使用
