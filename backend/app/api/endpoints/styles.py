@@ -35,7 +35,7 @@ STYLES = [
         name="Q版卡通风",
         description="三丽鸥风格，可爱卡通的日系风格",
         previewUrl="/styles/sanrio.jpg",
-        promptDescription="Sanrio风格，采用Hello Kitty等经典卡通角色的艺术风格，线条简洁可爱，具有日系卡通的萌系特质，充满童趣和温暖感。"
+        promptDescription="Sanrio风格，采用Hello Kitty等经典卡通角色的艺术风格，具有日系卡通的萌系特质。"
     )
 ]
 

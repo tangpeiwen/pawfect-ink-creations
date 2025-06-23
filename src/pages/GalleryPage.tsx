@@ -21,11 +21,11 @@ const GalleryPage = () => {
     },
     { 
       id: 3, 
-      petName: "全家福", 
+      petName: "大猫", 
       style: "可爱卡通风", 
-      petPhoto: "/images/全家福.png",
-      tattooDesign: "/images/全家福2.png",
-      description: "为我们一家3只猫生成了不同的头像"
+      petPhoto: "/images/大猫.png",
+      tattooDesign: "/images/大猫2.png",
+      description: "美丽大方的大猫和吉卜力风格是绝配"
     },
     { 
       id: 4, 
