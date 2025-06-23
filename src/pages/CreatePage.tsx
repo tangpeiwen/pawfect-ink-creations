@@ -284,7 +284,7 @@ const CreatePage = () => {
         console.log('开始轮询生成状态，generationId:', generationId);
         
         let pollCount = 0;
-        const maxPollCount = 120; // 最多轮询2分钟（每秒一次）
+        const maxPollCount = 150; // 最多轮询2分钟（每秒一次）
         
         // 开始轮询生成状态 - 使用更高效的策略
         const intervalId = setInterval(async () => {
