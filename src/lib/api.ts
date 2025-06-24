@@ -141,7 +141,6 @@ export const uploadImage = async (file: File) => {
     }
 
     const data = await response.json();
-    console.log('上传成功，服务器返回:', data);
     
     if (!data.success) {
       throw new Error(data.message || '上传失败');
