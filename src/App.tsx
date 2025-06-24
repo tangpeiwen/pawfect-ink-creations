@@ -4,7 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Index from './pages/Index';
 import GalleryPage from './pages/GalleryPage';
 import CreatePage from './pages/CreatePage';
-import AboutPage from './pages/AboutPage';
+// import AboutPage from './pages/AboutPage';
 import PricingPage from './pages/PricingPage';
 import NotFound from './pages/NotFound';
 import AuthPage from './pages/AuthPage';
@@ -21,7 +21,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/about" element={<AboutPage />} />
+          {/* <Route path="/about" element={<AboutPage />} /> */}
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/sign-in" element={<AuthPage />} />
           <Route path="/register" element={<RegisterPage />} />

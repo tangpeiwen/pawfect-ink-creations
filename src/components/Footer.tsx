@@ -32,7 +32,7 @@ const Footer = () => {
             <nav className="flex flex-col space-y-2">
               <Link to="/" className="text-gray-500 hover:text-pet-pink transition-colors">首页</Link>
               <Link to="/gallery" className="text-gray-500 hover:text-pet-pink transition-colors">作品展示</Link>
-              <Link to="/about" className="text-gray-500 hover:text-pet-pink transition-colors">关于我们</Link>
+              {/* <Link to="/about" className="text-gray-500 hover:text-pet-pink transition-colors">关于我们</Link> */}
               <Link to="/pricing" className="text-gray-500 hover:text-pet-pink transition-colors">价格方案</Link>
             </nav>
           </div>

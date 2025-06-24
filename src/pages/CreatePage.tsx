@@ -296,9 +296,15 @@ const CreatePage = () => {
               clearInterval(intervalId);
               setStatusCheckInterval(null);
               setIsGenerating(false);
-              setGenerationStatus("生成超时");
+              setGenerationStatus("生成失败");
               setCurrentGenerationId("");
-              toast.error("生成时间过长，请稍后重试");
+              
+              // 超时视为生成失败，给用户明确的失败提示
+              toast.error("生成任务超时失败，请重试", {
+                duration: 5000
+              });
+              
+              console.log(`生成任务超时失败，已轮询 ${pollCount} 次`);
               return;
             }
             
@@ -534,7 +540,19 @@ const CreatePage = () => {
                 <PawLoadingAnimation />
                 <div className="text-center space-y-2">
                   <p className="text-lg font-medium">{generationStatus}</p>
-                  <p className="text-sm text-gray-500">这可能需要1-2分钟，请耐心等待</p>
+                  {generationStatus === "生成失败" ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">生成任务失败，请重试</p>
+                      <p className="text-xs text-gray-500">您可以重新生成或返回上一步调整参数</p>
+                    </div>
+                  ) : generationStatus.includes("超时") ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-amber-600">生成任务可能仍在后台进行中</p>
+                      <p className="text-xs text-gray-500">您可以点击"检查状态"查看最新进度，或稍后在历史记录中查看结果</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">这可能需要1-2分钟，请耐心等待</p>
+                  )}
                 </div>
                 <div className="w-full space-y-2">
                   <div className="flex justify-between text-sm">
@@ -545,13 +563,45 @@ const CreatePage = () => {
                 </div>
               </div>
               <DialogFooter className="flex justify-center">
-                <Button 
-                  variant="outline" 
-                  onClick={handleCancelGeneration}
-                  className="w-full"
-                >
-                  取消生成
-                </Button>
+                {generationStatus === "生成失败" ? (
+                  <div className="flex space-x-2 w-full">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCancelGeneration}
+                      className="flex-1"
+                    >
+                      关闭
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        handleCancelGeneration();
+                        // 短暂延迟后重新生成
+                        setTimeout(() => {
+                          handleGenerate();
+                        }, 500);
+                      }}
+                      className="flex-1 pet-button"
+                    >
+                      重新生成
+                    </Button>
+                  </div>
+                ) : generationStatus.includes("超时") ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelGeneration}
+                    className="w-full"
+                  >
+                    关闭
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelGeneration}
+                    className="w-full"
+                  >
+                    取消生成
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>

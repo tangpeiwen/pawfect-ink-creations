@@ -12,7 +12,7 @@ from pathlib import Path
 import asyncio
 from app.core.config import settings
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from app.services.storage_service import get_style_reference_images
 
 router = APIRouter()
@@ -317,9 +317,9 @@ async def get_generation_status(
             error=generation.get('error_message')
         )
         
-        # 如果主表中没有result_url，但状态是completed，尝试从generation_results表获取
-        if response_data.status == 'completed' and not response_data.resultUrl:
-            logger.info(f"主表result_url为空，尝试从generation_results表获取: {generation_id}")
+        # 对于completed状态的任务，始终尝试从generation_results表获取result_url
+        if response_data.status == 'completed':
+            logger.info(f"任务已完成，从generation_results表获取result_url: {generation_id}")
             try:
                 results = await db_service.get_generation_results(generation_id)
                 if results and len(results) > 0:
@@ -328,11 +328,57 @@ async def get_generation_status(
                         response_data.resultUrl = result_url
                         logger.info(f"从generation_results表获取到result_url: {result_url}")
                     else:
-                        logger.warning(f"generation_results表中也没有result_url: {generation_id}")
+                        logger.warning(f"generation_results表中result_url为空: {generation_id}")
+                        # 如果result_url为空，可能是数据问题，但不应该影响状态返回
                 else:
                     logger.warning(f"generation_results表中没有记录: {generation_id}")
+                    # 如果没有结果记录，可能任务实际上还没完成，保持原状态
             except Exception as e:
                 logger.error(f"从generation_results表获取result_url失败: {str(e)}")
+                # 即使获取失败，也应该返回completed状态，让前端知道任务已完成
+        
+        # 超时检测：如果任务状态为processing且创建时间超过5分钟，标记为失败
+        elif response_data.status == 'processing':
+            try:
+                created_at_str = generation.get('created_at')
+                if created_at_str:
+                    # 解析创建时间
+                    if isinstance(created_at_str, str):
+                        # 如果是字符串，尝试解析
+                        try:
+                            created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+                        except:
+                            created_at = datetime.fromisoformat(created_at_str)
+                    else:
+                        # 如果已经是datetime对象
+                        created_at = created_at_str
+                    
+                    # 确保时区信息
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
+                    
+                    # 计算时间差
+                    now = datetime.now(timezone.utc)
+                    time_diff = now - created_at
+                    
+                    # 如果超过5分钟且仍在processing状态，标记为失败
+                    if time_diff.total_seconds() > 150:  
+                        logger.warning(f"任务 {generation_id} 超时，自动标记为失败")
+                        
+                        # 更新数据库状态为失败
+                        await db_service.update_generation(generation_id, GenerationUpdate(
+                            status='failed',
+                            error_message='任务执行超时'
+                        ))
+                        
+                        # 更新响应数据
+                        response_data.status = 'failed'
+                        response_data.error = '任务执行超时'
+                        
+                        logger.info(f"任务 {generation_id} 已标记为超时失败")
+            except Exception as e:
+                logger.error(f"超时检测失败: {str(e)}")
+                # 超时检测失败不影响正常状态返回
         
         logger.info(f"返回状态响应: {response_data.dict()}")
         return response_data

@@ -217,7 +217,7 @@ const UploadSection = ({ onImageUploaded }: UploadSectionProps) => {
                 <p className="text-sm text-gray-500 text-center mt-1 mb-4">
                   {isProcessing ? 
                     (compressionStatus || "请稍等片刻") : 
-                    "支持JPG, PNG, WEBP, HEIC格式，最大30MB"
+                    "支持JPG, PNG, WEBP, HEIC格式，最大10MB"
                   }
                 </p>
                 {compressionStatus && (

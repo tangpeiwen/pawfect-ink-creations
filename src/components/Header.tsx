@@ -20,7 +20,7 @@ const Header = () => {
           <Link to="/" className="font-medium hover:text-pet-pink transition-colors">首页</Link>
           <Link to="/gallery" className="font-medium hover:text-pet-pink transition-colors">作品展示</Link>
           <Link to="/pricing" className="font-medium hover:text-pet-pink transition-colors">价格套餐</Link>
-          <Link to="/about" className="font-medium hover:text-pet-pink transition-colors">关于我们</Link>
+          {/* <Link to="/about" className="font-medium hover:text-pet-pink transition-colors">关于我们</Link> */}
           <Link to="/create">
             <Button className="bg-pet-pink text-white px-6 py-2 rounded-full hover:bg-pet-pink/90">
               <Cat className="w-5 h-5 mr-1" />
@@ -51,7 +51,7 @@ const Header = () => {
             <Link to="/" className="font-medium hover:text-pet-pink transition-colors p-2">首页</Link>
             <Link to="/gallery" className="font-medium hover:text-pet-pink transition-colors p-2">作品展示</Link>
             <Link to="/pricing" className="font-medium hover:text-pet-pink transition-colors p-2">价格套餐</Link>
-            <Link to="/about" className="font-medium hover:text-pet-pink transition-colors p-2">关于我们</Link>
+            {/* <Link to="/about" className="font-medium hover:text-pet-pink transition-colors p-2">关于我们</Link> */}
             <Link to="/create">
               <Button className="bg-pet-pink text-white px-6 py-2 w-full rounded-full hover:bg-pet-pink/90">
                 <Cat className="w-5 h-5 mr-1" />

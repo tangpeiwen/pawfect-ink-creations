@@ -174,10 +174,10 @@ const Features = () => {
           /> */}
           <div className="p-8 md:p-12 text-center relative">
             <h2 className="text-4xl font-display font-bold mb-6 relative z-10">
-              简单三步，制作属于您的<span className="text-pet-pink">宠物纹身贴</span>
+              简单三步，制作属于你的<span className="text-pet-pink">宠物贴纸</span>
             </h2>
             <p className="text-lg md:text-xl text-gray-800 max-w-3xl mx-auto">
-              我们的AI系统能够将您上传的宠物照片转换为精美的纹身贴设计，操作简单，过程有趣
+              我们强大的AI服务能够将您上传的宠物照片转换为精美的贴纸设计，操作简单，过程有趣
             </p>
           </div>
 
