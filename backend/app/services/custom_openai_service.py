@@ -160,11 +160,11 @@ async def generate_sticker_with_custom_api(
             if not storage_path:
                 raise Exception(f"图片记录缺少存储路径: {user_image_id}")
             
-            logger.info(f"从数据库获取存储路径: {storage_path}")
+            # logger.info(f"从数据库获取存储路径: {storage_path}")
             
             # 从Supabase存储下载用户图片
             user_image_content = await storage_service.download_file(storage_path)
-            logger.info(f"成功下载用户图片: {storage_path}")
+            # logger.info(f"成功下载用户图片: {storage_path}")
             
         except Exception as e:
             raise Exception(f"无法下载用户图片: {str(e)}")

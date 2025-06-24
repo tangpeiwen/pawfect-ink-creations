@@ -188,7 +188,7 @@ async def generate_sticker_background(
         if analysis_guidance:
             image_analysis += f"\n分析重点: {'; '.join(analysis_guidance)}"
         
-        logger.info(f"任务 {generation_id} - 图片分析完成: {image_analysis[:100]}...")
+        # logger.info(f"任务 {generation_id} - 图片分析完成: {image_analysis[:100]}...")
         
         # 更新进度：开始AI生成
         await db_service.update_generation(generation_id, GenerationUpdate(progress=50))
@@ -288,10 +288,10 @@ async def get_generation_status(
     
     try:
         # 获取生成任务信息
-        logger.info(f"调用数据库查询: db_service.get_generation({generation_id})")
+        # logger.info(f"调用数据库查询: db_service.get_generation({generation_id})")
         generation = await db_service.get_generation(generation_id)
         
-        logger.info(f"数据库查询结果: {generation}")
+        # logger.info(f"数据库查询结果: {generation}")
         
         if not generation:
             logger.warning(f"未找到生成任务: generation_id={generation_id}")
@@ -367,7 +367,7 @@ async def get_generation_status(
                     time_diff = now - created_at
                     
                     # 如果超过5分钟且仍在processing状态，标记为失败
-                    if time_diff.total_seconds() > 150:  
+                    if time_diff.total_seconds() > 180:  
                         logger.warning(f"任务 {generation_id} 超时，自动标记为失败")
                         
                         # 更新数据库状态为失败
