@@ -200,6 +200,7 @@ export interface Generation {
   title: string | null;
   is_public: boolean;
   likes_count: number;
+  result_url: string | null;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
@@ -219,6 +220,7 @@ export interface GenerationInsert {
   title?: string | null;
   is_public?: boolean;
   likes_count?: number;
+  result_url?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
 }
@@ -235,6 +237,7 @@ export interface GenerationUpdate {
   title?: string | null;
   is_public?: boolean;
   likes_count?: number;
+  result_url?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
 }
