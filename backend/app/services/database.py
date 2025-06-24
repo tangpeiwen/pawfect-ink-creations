@@ -153,51 +153,93 @@ class DatabaseService:
     async def get_user_generations(self, user_id: str, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
         """获取用户的生成历史"""
         try:
-            # 使用连接查询获取生成记录和结果URL
+            # 首先尝试直接查询generations表（包含result_url字段）
             response = (self.client.table('generations')
-                       .select('''
-                           *,
-                           generation_results (
-                               result_url,
-                               created_at
-                           )
-                       ''')
+                       .select('*')
                        .eq('user_id', user_id)
                        .order('created_at', desc=True)
                        .range(offset, offset + limit - 1)
                        .execute())
             
-            # 处理查询结果，将generation_results中的result_url提取到主记录中
             processed_data = []
             for generation in response.data or []:
-                # 复制生成记录
                 processed_generation = dict(generation)
                 
-                # 如果有generation_results，取第一个结果的URL
-                if generation.get('generation_results') and len(generation['generation_results']) > 0:
-                    processed_generation['result_url'] = generation['generation_results'][0]['result_url']
+                # 优先使用result_url，如果没有则尝试获取generation_results
+                if generation.get('result_url'):
+                    # result_url字段已经存在，直接使用
+                    pass
                 else:
-                    processed_generation['result_url'] = None
-                
-                # 移除嵌套的generation_results
-                processed_generation.pop('generation_results', None)
+                    # 回退到连接查询generation_results（兼容旧数据）
+                    try:
+                        results = await self.get_generation_results(generation['id'])
+                        if results and len(results) > 0:
+                            processed_generation['result_url'] = results[0]['result_url']
+                        else:
+                            processed_generation['result_url'] = None
+                    except:
+                        processed_generation['result_url'] = None
                 
                 processed_data.append(processed_generation)
             
             return processed_data
         except Exception as e:
             logger.error(f"Error getting user generations: {e}")
-            return []
+            # 如果新字段不存在，回退到原来的连接查询逻辑
+            try:
+                response = (self.client.table('generations')
+                           .select('''
+                               *,
+                               generation_results (
+                                   result_url,
+                                   created_at
+                               )
+                           ''')
+                           .eq('user_id', user_id)
+                           .order('created_at', desc=True)
+                           .range(offset, offset + limit - 1)
+                           .execute())
+                
+                processed_data = []
+                for generation in response.data or []:
+                    processed_generation = dict(generation)
+                    
+                    if generation.get('generation_results') and len(generation['generation_results']) > 0:
+                        processed_generation['result_url'] = generation['generation_results'][0]['result_url']
+                    else:
+                        processed_generation['result_url'] = None
+                    
+                    processed_generation.pop('generation_results', None)
+                    processed_data.append(processed_generation)
+                
+                return processed_data
+            except Exception as fallback_error:
+                logger.error(f"Fallback query also failed: {fallback_error}")
+                return []
     
     # ==================== 生成结果相关操作 ====================
     
     async def create_generation_result(self, result_data: GenerationResultCreate) -> Optional[Dict[str, Any]]:
-        """创建生成结果"""
+        """创建生成结果，同时更新generations表的result_url"""
         try:
             data = result_data.dict()
             response = self.client.table('generation_results').insert(data).execute()
+            
             if response.data:
-                return response.data[0]
+                result_record = response.data[0]
+                
+                # 同时更新generations表的result_url字段
+                try:
+                    await self.update_generation(
+                        result_data.generation_id, 
+                        GenerationUpdate(result_url=result_data.result_url)
+                    )
+                    logger.info(f"已更新generation {result_data.generation_id} 的result_url")
+                except Exception as update_error:
+                    logger.error(f"更新result_url失败: {update_error}")
+                    # 不影响generation_result的创建
+                
+                return result_record
             return None
         except Exception as e:
             logger.error(f"Error creating generation result: {e}")
@@ -406,13 +448,30 @@ class DatabaseService:
     # ==================== 生成数量统计相关操作 ====================
     
     async def get_user_generations_count(self, user_id: str) -> int:
-        """获取用户生成数量"""
+        """获取用户生成数量（统计有result_url的已完成记录）"""
         try:
-            response = self.client.table('generations').select('id', count='exact').eq('user_id', user_id).eq('status', 'completed').execute()
-            return response.count or 0
+            # 直接统计generations表中有result_url的已完成记录
+            response = (self.client.table('generations')
+                       .select('id', count='exact')
+                       .eq('user_id', user_id)
+                       .eq('status', 'completed')
+                       .not_.is_('result_url', 'null')
+                       .execute())
+            
+            count = response.count or 0
+            logger.info(f"用户 {user_id} 有result_url的已完成生成数量: {count}")
+            return count
         except Exception as e:
-            logger.error(f"Error getting user generations count: {e}")
-            return 0
+            logger.error(f"统计generations表失败: {e}")
+            # 如果新字段不存在，回退到原来的逻辑
+            try:
+                all_generations = await self.get_user_generations(user_id, limit=1000)
+                count = len([g for g in all_generations if g.get('result_url')])
+                logger.info(f"回退方法统计用户 {user_id} 有result_url的生成数量: {count}")
+                return count
+            except Exception as fallback_error:
+                logger.error(f"回退统计方法也失败: {fallback_error}")
+                return 0
 
     async def get_user_images_count(self, user_id: str) -> int:
         """获取用户上传图片数量"""

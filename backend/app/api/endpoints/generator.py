@@ -317,9 +317,10 @@ async def get_generation_status(
             error=generation.get('error_message')
         )
         
-        # 对于completed状态的任务，始终尝试从generation_results表获取result_url
-        if response_data.status == 'completed':
-            logger.info(f"任务已完成，从generation_results表获取result_url: {generation_id}")
+        # 简化逻辑：直接使用generations表中的result_url，不再需要查询generation_results表
+        # 如果result_url为空但状态是completed，可能是旧数据，尝试从generation_results获取
+        if response_data.status == 'completed' and not response_data.resultUrl:
+            logger.info(f"任务已完成但result_url为空，尝试从generation_results表获取: {generation_id}")
             try:
                 results = await db_service.get_generation_results(generation_id)
                 if results and len(results) > 0:
@@ -327,15 +328,19 @@ async def get_generation_status(
                     if result_url:
                         response_data.resultUrl = result_url
                         logger.info(f"从generation_results表获取到result_url: {result_url}")
+                        
+                        # 同时更新generations表，避免下次再查询
+                        try:
+                            await db_service.update_generation(generation_id, GenerationUpdate(result_url=result_url))
+                            logger.info(f"已将result_url更新到generations表: {generation_id}")
+                        except Exception as update_error:
+                            logger.error(f"更新generations表result_url失败: {update_error}")
                     else:
                         logger.warning(f"generation_results表中result_url为空: {generation_id}")
-                        # 如果result_url为空，可能是数据问题，但不应该影响状态返回
                 else:
                     logger.warning(f"generation_results表中没有记录: {generation_id}")
-                    # 如果没有结果记录，可能任务实际上还没完成，保持原状态
             except Exception as e:
                 logger.error(f"从generation_results表获取result_url失败: {str(e)}")
-                # 即使获取失败，也应该返回completed状态，让前端知道任务已完成
         
         # 超时检测：如果任务状态为processing且创建时间超过5分钟，标记为失败
         elif response_data.status == 'processing':

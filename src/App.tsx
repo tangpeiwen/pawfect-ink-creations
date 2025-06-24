@@ -4,6 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Index from './pages/Index';
 import GalleryPage from './pages/GalleryPage';
 import CreatePage from './pages/CreatePage';
+import MyWorksPage from './pages/MyWorksPage';
 // import AboutPage from './pages/AboutPage';
 import PricingPage from './pages/PricingPage';
 import NotFound from './pages/NotFound';
@@ -33,6 +34,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CreatePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/my-works" 
+            element={
+              <ProtectedRoute>
+                <MyWorksPage />
               </ProtectedRoute>
             } 
           />

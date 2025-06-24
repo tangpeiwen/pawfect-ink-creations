@@ -19,6 +19,7 @@ const Header = () => {
         <nav className="hidden md:flex items-center space-x-6">
           <Link to="/" className="font-medium hover:text-pet-pink transition-colors">首页</Link>
           <Link to="/gallery" className="font-medium hover:text-pet-pink transition-colors">作品展示</Link>
+          <Link to="/my-works" className="font-medium hover:text-pet-pink transition-colors">我的作品</Link>
           <Link to="/pricing" className="font-medium hover:text-pet-pink transition-colors">价格套餐</Link>
           {/* <Link to="/about" className="font-medium hover:text-pet-pink transition-colors">关于我们</Link> */}
           <Link to="/create">
@@ -50,6 +51,7 @@ const Header = () => {
           <nav className="flex flex-col space-y-4">
             <Link to="/" className="font-medium hover:text-pet-pink transition-colors p-2">首页</Link>
             <Link to="/gallery" className="font-medium hover:text-pet-pink transition-colors p-2">作品展示</Link>
+            <Link to="/my-works" className="font-medium hover:text-pet-pink transition-colors p-2">我的作品</Link>
             <Link to="/pricing" className="font-medium hover:text-pet-pink transition-colors p-2">价格套餐</Link>
             {/* <Link to="/about" className="font-medium hover:text-pet-pink transition-colors p-2">关于我们</Link> */}
             <Link to="/create">
