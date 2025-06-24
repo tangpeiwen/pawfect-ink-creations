@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import UploadSection from "@/components/UploadSection";
@@ -42,6 +42,9 @@ const CreatePage = () => {
   const [currentGenerationId, setCurrentGenerationId] = useState<string>("");
   const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
   
+  // 添加超时标志，防止超时后的API调用继续更新状态
+  const isGenerationTimedOutRef = useRef<boolean>(false);
+  
   // 添加Token不足对话框状态
   const [showTokenDialog, setShowTokenDialog] = useState<boolean>(false);
   const [tokenErrorMessage, setTokenErrorMessage] = useState<string>("");
@@ -55,6 +58,14 @@ const CreatePage = () => {
   const [historyImages, setHistoryImages] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
   const [historyError, setHistoryError] = useState<string>("");
+
+  // 添加状态变化跟踪
+  useEffect(() => {
+    console.log(`=== 生成状态变化 ===`);
+    console.log(`generationStatus: "${generationStatus}"`);
+    console.log(`isGenerating: ${isGenerating}`);
+    console.log(`generationProgress: ${generationProgress}`);
+  }, [generationStatus, isGenerating, generationProgress]);
 
   // 获取历史生成记录
   const fetchHistory = async () => {
@@ -118,6 +129,7 @@ const CreatePage = () => {
     setGenerationProgress(0);
     setGenerationStatus("");
     setCurrentGenerationId("");
+    isGenerationTimedOutRef.current = false; // 重置超时标志
     
     // 显示取消提示
     toast.info("已取消生成任务");
@@ -222,6 +234,7 @@ const CreatePage = () => {
     // 重置进度和结果
     setGenerationProgress(0);
     setGenerationStatus("正在准备...");
+    isGenerationTimedOutRef.current = false; // 重置超时标志
     
     // Start generation process
     setIsGenerating(true);
@@ -253,8 +266,7 @@ const CreatePage = () => {
       
       // 检查API调用是否成功
       if (!result.success) {
-        // API调用失败，显示错误信息
-        setIsGenerating(false);
+        // API调用失败，显示错误信息但不关闭弹窗
         setGenerationStatus("生成失败");
         
         // 显示错误信息，特别关注Token不足的情况
@@ -263,10 +275,12 @@ const CreatePage = () => {
         
         // 检查是否是Token不足的错误
         if (errorMessage.includes('Token不足')) {
-          // 使用模态对话框显示Token不足错误
+          // 使用模态对话框显示Token不足错误，同时关闭生成弹窗
+          setIsGenerating(false);
           handleTokenInsufficient(errorMessage);
         } else {
-          // 显示其他错误
+          // 显示其他错误，但保持弹窗打开，让用户选择操作
+          // 不设置 setIsGenerating(false)，让弹窗保持打开状态
           toast.error(errorMessage);
         }
         
@@ -284,32 +298,44 @@ const CreatePage = () => {
         console.log('开始轮询生成状态，generationId:', generationId);
         
         let pollCount = 0;
-        const maxPollCount = 150; // 最多轮询2分钟（每秒一次）
+        const maxPollCount = 200; 
         
         // 开始轮询生成状态 - 使用更高效的策略
         const intervalId = setInterval(async () => {
+          pollCount++;
+          
+          // 超时检查 - 在调用API之前检查
+          if (pollCount > maxPollCount) {
+            console.log(`=== 生成任务超时 ===`);
+            console.log(`轮询次数: ${pollCount}/${maxPollCount}`);
+            console.log(`当前isGenerating状态: ${isGenerating}`);
+            
+            clearInterval(intervalId);
+            setStatusCheckInterval(null);
+            isGenerationTimedOutRef.current = true; // 设置超时标志
+            setGenerationStatus("生成失败，未扣除Token，请重新开始");
+            setCurrentGenerationId("");
+            
+            console.log(`设置状态为"生成失败，未扣除Token，请重新开始"，isGenerating保持为: ${isGenerating}`);
+            
+            // 超时不关闭弹窗，让用户选择操作，并显示友好的错误提示
+            toast.error("生成任务超时失败，未扣除Token，请重新开始", {
+              duration: 8000
+            });
+            
+            console.log(`生成任务超时失败，已轮询 ${pollCount} 次，未扣除Token`);
+            return;
+          }
+          
           try {
-            pollCount++;
-            
-            // 超时检查
-            if (pollCount > maxPollCount) {
-              clearInterval(intervalId);
-              setStatusCheckInterval(null);
-              setIsGenerating(false);
-              setGenerationStatus("生成失败");
-              setCurrentGenerationId("");
-              
-              // 超时视为生成失败，给用户明确的失败提示
-              toast.error("生成任务超时失败，请重试", {
-                duration: 5000
-              });
-              
-              console.log(`生成任务超时失败，已轮询 ${pollCount} 次`);
-              return;
-            }
-            
             const statusResult = await checkGenerationStatus(generationId);
             console.log(`状态检查结果 (${pollCount}/${maxPollCount}):`, statusResult);
+            
+            // 如果已经超时，不再处理API返回的结果
+            if (isGenerationTimedOutRef.current) {
+              console.log('任务已超时，忽略API返回结果');
+              return;
+            }
             
             // 更新进度和状态描述
             const progress = statusResult.progress || 0;
@@ -359,7 +385,6 @@ const CreatePage = () => {
                   fetchHistory();
                 }, 1000); // 延迟1秒刷新，确保后端数据已保存
               } else if (statusResult.status === 'failed') {
-                setIsGenerating(false);
                 setGenerationProgress(0);
                 
                 // 检查是否是Token不足的错误
@@ -368,10 +393,12 @@ const CreatePage = () => {
                 
                 // 检查是否是Token不足的错误
                 if (errorMessage.includes('Token不足')) {
-                  // 使用模态对话框显示Token不足错误
+                  // 使用模态对话框显示Token不足错误，同时关闭生成弹窗
+                  setIsGenerating(false);
                   handleTokenInsufficient(errorMessage);
                 } else {
-                  // 显示其他错误
+                  // 显示其他错误，但保持弹窗打开，让用户选择操作
+                  // 不设置 setIsGenerating(false)，让弹窗保持打开状态
                   toast.error(`生成失败: ${errorMessage}`);
                 }
               }
@@ -383,7 +410,7 @@ const CreatePage = () => {
               clearInterval(intervalId);
               setStatusCheckInterval(null);
               setCurrentGenerationId("");
-              setIsGenerating(false);
+              setGenerationStatus("网络错误");
               toast.error('无法获取生成状态，请刷新页面重试');
             }
           }
@@ -409,8 +436,8 @@ const CreatePage = () => {
     } catch (error) {
       console.error('=== 生成失败 ===');
       console.error('错误详情:', error);
-      setIsGenerating(false);
       setGenerationStatus("生成失败");
+      // 不设置 setIsGenerating(false)，让弹窗保持打开状态
       toast.error(`生成失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
@@ -427,17 +454,7 @@ const CreatePage = () => {
 
   // 当前选中的结果图片
   const currentResultImage = resultImages[selectedResultIndex] || null;
-  
-  // 添加调试信息
-  // console.log('CreatePage 当前状态:', {
-  //   resultImages,
-  //   selectedResultIndex,
-  //   currentResultImage,
-  //   isGenerating,
-  //   isUploading,
-  //   uploadProgress
-  // });
-  
+
   // 处理平滑过渡到风格选择页面
   const handleProceedToStyle = async () => {
     if (!uploadedImage || !imageId) {
@@ -540,18 +557,33 @@ const CreatePage = () => {
                 <PawLoadingAnimation />
                 <div className="text-center space-y-2">
                   <p className="text-lg font-medium">{generationStatus}</p>
+                  {/* 添加调试信息
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="text-xs text-gray-400">调试: 当前状态 = "{generationStatus}"</p>
+                  )} */}
                   {generationStatus === "生成失败" ? (
                     <div className="space-y-1">
                       <p className="text-sm text-red-600">生成任务失败，请重试</p>
                       <p className="text-xs text-gray-500">您可以重新生成或返回上一步调整参数</p>
                     </div>
-                  ) : generationStatus.includes("超时") ? (
+                  ) : generationStatus === "生成超时" ? (
                     <div className="space-y-1">
-                      <p className="text-sm text-amber-600">生成任务可能仍在后台进行中</p>
-                      <p className="text-xs text-gray-500">您可以点击"检查状态"查看最新进度，或稍后在历史记录中查看结果</p>
+                      <p className="text-sm text-amber-600">生成任务超时，可能仍在后台进行中</p>
+                      <p className="text-xs text-gray-500">您可以重新生成或稍后在历史记录中查看结果</p>
+                    </div>
+                  ) : generationStatus === "生成失败，未扣除Token，请重新开始" ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">生成任务超时失败</p>
+                      <p className="text-xs text-green-600 font-medium">✓ 未扣除Token，请重新开始</p>
+                      <p className="text-xs text-gray-500">您可以重新生成或返回上一步调整参数</p>
+                    </div>
+                  ) : generationStatus === "网络错误" ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">网络连接异常</p>
+                      <p className="text-xs text-gray-500">请检查网络连接后重试</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">这可能需要1-2分钟，请耐心等待</p>
+                    <p className="text-sm text-gray-500">这可能需要2-3分钟，请耐心等待</p>
                   )}
                 </div>
                 <div className="w-full space-y-2">
@@ -563,7 +595,7 @@ const CreatePage = () => {
                 </div>
               </div>
               <DialogFooter className="flex justify-center">
-                {generationStatus === "生成失败" ? (
+                {generationStatus === "生成失败" || generationStatus === "生成超时" || generationStatus === "生成失败，未扣除Token，请重新开始" || generationStatus === "网络错误" ? (
                   <div className="flex space-x-2 w-full">
                     <Button 
                       variant="outline" 
@@ -574,7 +606,9 @@ const CreatePage = () => {
                     </Button>
                     <Button 
                       onClick={() => {
-                        handleCancelGeneration();
+                        // 重置状态并重新生成
+                        setGenerationProgress(0);
+                        setGenerationStatus("正在准备...");
                         // 短暂延迟后重新生成
                         setTimeout(() => {
                           handleGenerate();
@@ -585,14 +619,6 @@ const CreatePage = () => {
                       重新生成
                     </Button>
                   </div>
-                ) : generationStatus.includes("超时") ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={handleCancelGeneration}
-                    className="w-full"
-                  >
-                    关闭
-                  </Button>
                 ) : (
                   <Button 
                     variant="outline" 
