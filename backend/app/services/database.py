@@ -448,30 +448,13 @@ class DatabaseService:
     # ==================== 生成数量统计相关操作 ====================
     
     async def get_user_generations_count(self, user_id: str) -> int:
-        """获取用户生成数量（统计有result_url的已完成记录）"""
+        """获取用户生成数量"""
         try:
-            # 直接统计generations表中有result_url的已完成记录
-            response = (self.client.table('generations')
-                       .select('id', count='exact')
-                       .eq('user_id', user_id)
-                       .eq('status', 'completed')
-                       .not_.is_('result_url', 'null')
-                       .execute())
-            
-            count = response.count or 0
-            logger.info(f"用户 {user_id} 有result_url的已完成生成数量: {count}")
-            return count
+            response = self.client.table('generations').select('id', count='exact').eq('user_id', user_id).eq('status', 'completed').execute()
+            return response.count or 0
         except Exception as e:
-            logger.error(f"统计generations表失败: {e}")
-            # 如果新字段不存在，回退到原来的逻辑
-            try:
-                all_generations = await self.get_user_generations(user_id, limit=1000)
-                count = len([g for g in all_generations if g.get('result_url')])
-                logger.info(f"回退方法统计用户 {user_id} 有result_url的生成数量: {count}")
-                return count
-            except Exception as fallback_error:
-                logger.error(f"回退统计方法也失败: {fallback_error}")
-                return 0
+            logger.error(f"Error getting user generations count: {e}")
+            return 0
 
     async def get_user_images_count(self, user_id: str) -> int:
         """获取用户上传图片数量"""
@@ -535,6 +518,107 @@ class DatabaseService:
                 
         except Exception as e:
             logger.error(f"修复用户total_generations失败: {e}")
+            return False
+
+    # ==================== 实物产品订单相关操作 ====================
+    
+    async def create_product_order(self, order_data: Dict) -> Dict:
+        """创建实物产品订单"""
+        try:
+            response = self.client.table('product_orders').insert(order_data).execute()
+            if response.data:
+                return response.data[0]
+            raise Exception("创建实物产品订单失败")
+        except Exception as e:
+            logger.error(f"创建实物产品订单失败: {e}")
+            raise Exception(f"创建实物产品订单失败: {str(e)}")
+
+    async def get_product_order(self, order_id: str) -> Optional[Dict]:
+        """获取实物产品订单详情"""
+        try:
+            response = self.client.table('product_orders').select('*').eq('id', order_id).execute()
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as e:
+            logger.error(f"获取实物产品订单失败: {e}")
+            return None
+
+    async def update_product_order(self, order_id: str, update_data: Dict) -> bool:
+        """更新实物产品订单"""
+        try:
+            response = self.client.table('product_orders').update(update_data).eq('id', order_id).execute()
+            return len(response.data) > 0
+        except Exception as e:
+            logger.error(f"更新实物产品订单失败: {e}")
+            return False
+
+    async def get_user_product_orders(self, user_id: str, skip: int = 0, limit: int = 20) -> List[Dict]:
+        """获取用户实物产品订单列表"""
+        try:
+            response = (self.client.table('product_orders')
+                       .select('*')
+                       .eq('user_id', user_id)
+                       .order('created_at', desc=True)
+                       .range(skip, skip + limit - 1)
+                       .execute())
+            return response.data or []
+        except Exception as e:
+            logger.error(f"获取用户实物产品订单失败: {e}")
+            return []
+
+    async def consume_user_tokens(self, user_id: str, amount: int, description: str = "") -> bool:
+        """扣除用户Token"""
+        try:
+            # 先获取当前余额
+            user_profile = await self.get_user_profile(user_id)
+            if not user_profile:
+                logger.error(f"用户 {user_id} 不存在")
+                return False
+            
+            current_tokens = user_profile.get('tokens_remaining', 0)
+            if current_tokens < amount:
+                logger.error(f"用户 {user_id} Token余额不足: 当前 {current_tokens}, 需要 {amount}")
+                return False
+            
+            # 计算新余额
+            new_balance = current_tokens - amount
+            logger.info(f"用户 {user_id} Token扣除: 当前 {current_tokens} - {amount} = {new_balance}")
+            
+            # 直接更新用户余额
+            update_response = self.client.table('user_profiles').update({
+                'tokens_remaining': new_balance
+            }).eq('id', user_id).execute()
+            
+            if not update_response.data:
+                logger.error(f"更新用户Token余额失败: {user_id}")
+                return False
+            
+            logger.info(f"用户 {user_id} Token余额更新成功: {new_balance}")
+            
+            # 记录交易
+            transaction_data = {
+                'user_id': user_id,
+                'amount': -amount,  # 负数表示消费
+                'transaction_type': 'consumption',
+                'description': description or f'消费{amount}个Token'
+            }
+            
+            try:
+                response = self.client.table('token_transactions').insert(transaction_data).execute()
+                if response.data:
+                    logger.info(f"Token消费交易记录创建成功")
+                else:
+                    logger.warning(f"Token消费交易记录创建失败，但Token已扣除")
+            except Exception as trans_error:
+                logger.error(f"创建Token消费交易记录失败: {trans_error}")
+                # 交易记录失败不影响Token扣除
+            
+            logger.info(f"用户 {user_id} 成功扣除 {amount} Token，当前余额: {new_balance}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"扣除用户Token失败: {e}")
             return False
 
 # 创建全局数据库服务实例

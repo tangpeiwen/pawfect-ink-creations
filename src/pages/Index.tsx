@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
-import { ArrowRight, Cat, PawPrint, Heart, UserPlus } from "lucide-react";
+import { ArrowRight, Cat, PawPrint, Heart, UserPlus, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import PixelTransition from "@/components/PixelTransition";
@@ -191,28 +191,157 @@ const Features = () => {
 
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 relative z-10">
           <StepCard
             icon={Cat}
             title="上传照片"
-            description="上传您宠物的照片，支持各种角度，让我们捕捉您爱宠的神韵"
+            description="上传宠物的照片，支持多角度，让我们捕捉你爱宠的神韵"
           />
 
           <StepCard
             icon={PawPrint}
             title="选择风格"
-            description="多种艺术风格可选，打造符合您个人品味的纹身贴设计"
+            description="多种艺术风格可选，打造你独一无二的贴纸设计"
           />
 
           <StepCard
             icon={Heart}
             title="AI生成"
-            description="先进的AI技术将您的宠物照片转化为精美的纹身贴设计"
+            description="先进的AI技术将您的宠物照片转化为栩栩如生的卡通形象"
+          />
+
+          <StepCard
+            icon={Package}
+            title="一站到家"
+            description="设计完成后可直接订购纹身贴或贴纸，快递直达你家"
           />
         </div>
 
         <div className="mt-12 text-center relative z-10">
           <AuthAwareCTA variant="secondary" />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const GalleryItem = ({ item }: { item: any }) => (
+  <div className="rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all border-2 border-pet-yellow/20 hover:border-pet-yellow transform hover:-translate-y-2 bg-white">
+    <div className="p-6">
+      {/* 标题区域 */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <PawPrint className="h-5 w-5 mr-2 text-pet-pink" />
+          <h3 className="font-display font-bold text-lg">{item.petName}</h3>
+        </div>
+        <div className="bg-pet-yellow/20 rounded-full px-3 py-1">
+          <p className="text-sm text-gray-700">{item.style}</p>
+        </div>
+      </div>
+
+      {/* 图片对比区域 */}
+      <div className="flex items-center gap-4 mb-4">
+        {/* 宠物照片 */}
+        <div className="flex-1">
+          <div className="text-center mb-2">
+            <span className="text-sm text-gray-500 font-medium">原始照片</span>
+          </div>
+          <div className="aspect-square rounded-2xl overflow-hidden relative group border-2 border-pet-peach/30">
+            <img 
+              src={item.petPhoto} 
+              alt={`${item.petName}的照片`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+            />
+          </div>
+        </div>
+
+        {/* 箭头 */}
+        <div className="flex-shrink-0">
+          <div className="bg-gradient-pet rounded-full p-3">
+            <ArrowRight className="h-6 w-6 text-white" />
+          </div>
+        </div>
+
+        {/* 纹身设计 */}
+        <div className="flex-1">
+          <div className="text-center mb-2">
+            <span className="text-sm text-gray-500 font-medium">生成图案</span>
+          </div>
+          <div className="aspect-square rounded-2xl overflow-hidden relative group border-2 border-pet-pink/30">
+            <img 
+              src={item.tattooDesign} 
+              alt={`${item.petName}的纹身设计`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+            />
+            <div className="absolute inset-0 bg-gradient-pet opacity-0 group-hover:opacity-70 transition-opacity flex items-center justify-center">
+              <div className="text-white text-center translate-y-4 group-hover:translate-y-0 transition-transform">
+                <Heart className="h-8 w-8 mx-auto fill-white" />
+                <p className="font-bold mt-1 text-sm">查看详情</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 描述区域 */}
+      <div className="text-center">
+        <p className="text-gray-600 text-sm">{item.description}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const Gallery = () => {
+  const featuredItems = [
+    { 
+      id: 1, 
+      petName: "小拼", 
+      style: "粗线条手绘风", 
+      petPhoto: "/images/小拼.png",
+      tattooDesign: "/images/小拼2.png",
+      description: "小拼是一个胖胖公主，所以着重表现了\"身体圆\""
+    },
+    { 
+      id: 2, 
+      petName: "二猫", 
+      style: "蜡笔插画风", 
+      petPhoto: "/images/二猫.png",
+      tattooDesign: "/images/二猫2.png",
+      description: "二猫有可爱的对眼，所以添加了\"猫咪是对眼\"的自定义特征"
+    }
+  ];
+
+  return (
+    <section className="py-16 bg-white relative">
+      <div className="container px-8 md:px-12 lg:px-16 mx-auto max-w-6xl relative">
+        <div className="text-center mb-12">
+          <div className="inline-block">
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4 relative">
+              精选
+              <span className="bg-clip-text text-transparent bg-gradient-pet">作品展示</span>
+              <div className="absolute -top-6 -right-6">
+                <Heart className="h-6 w-6 text-pet-pink fill-pet-pink animate-pulse-soft" />
+              </div>
+            </h2>
+          </div>
+          <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto">
+            看看其他用户为他们的爱宠制作的精美纹身贴设计
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {featuredItems.map((item) => (
+            <GalleryItem key={item.id} item={item} />
+          ))}
+        </div>
+
+        <div className="text-center">
+          <Link to="/gallery">
+            <Button className="bg-black hover:bg-gray-800 text-white font-bold px-8 py-6 rounded-full text-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] transition-all">
+              查看更多作品
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
@@ -267,6 +396,7 @@ const Index = () => {
     <Layout>
       <Hero />
       <Features />
+      <Gallery />
     </Layout>
   );
 };

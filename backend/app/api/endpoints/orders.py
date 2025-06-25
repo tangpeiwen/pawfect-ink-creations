@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
-from app.models.schemas import OrderCreate, OrderResponse, OrderCreateResponse
+from app.models.schemas import OrderCreate, OrderResponse, OrderCreateResponse, ProductOrderCreate, ProductOrderResponse
 from app.services.database import db_service
 from app.services.zpay_service import ZpayService
 from app.core.auth import get_current_user_id
@@ -264,4 +264,139 @@ async def get_order_history(
         }
     except Exception as e:
         logger.error(f"获取订单历史失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取订单历史失败: {str(e)}")
+
+# ==================== 实物产品订单相关API ====================
+
+@router.post("/product/create", response_model=ProductOrderResponse)
+async def create_product_order(
+    request: ProductOrderCreate,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """创建实物产品订单"""
+    try:
+        logger.info(f"用户 {current_user_id} 开始创建实物产品订单")
+        logger.info(f"订单详情: 产品类型={request.product_type}, 产品名称={request.product_name}, Token成本={request.token_cost}")
+        
+        # 验证产品类型
+        if request.product_type not in ['sticker', 'tattoo']:
+            raise HTTPException(status_code=400, detail="无效的产品类型")
+        
+        # 检查用户Token余额
+        logger.info(f"检查用户 {current_user_id} 的Token余额")
+        user_profile = await db_service.get_user_profile(current_user_id)
+        if not user_profile:
+            logger.error(f"用户 {current_user_id} 不存在")
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        current_tokens = user_profile.get('tokens_remaining', 0)
+        logger.info(f"用户 {current_user_id} 当前Token余额: {current_tokens}, 需要: {request.token_cost}")
+        
+        if current_tokens < request.token_cost:
+            logger.error(f"用户 {current_user_id} Token余额不足: 当前{current_tokens}, 需要{request.token_cost}")
+            raise HTTPException(status_code=400, detail=f"Token余额不足，需要{request.token_cost}个Token，当前余额{current_tokens}个")
+        
+        # 生成订单ID
+        order_id = generate_order_id()
+        logger.info(f"生成订单ID: {order_id}")
+        
+        # 创建订单数据
+        order_data = {
+            "id": order_id,
+            "user_id": current_user_id,
+            "product_type": request.product_type,
+            "product_name": request.product_name,
+            "token_cost": request.token_cost,
+            "design_image_url": request.design_image_url,
+            "recipient_name": request.recipient_name,
+            "recipient_phone": request.recipient_phone,
+            "shipping_province": request.shipping_province,
+            "shipping_city": request.shipping_city,
+            "shipping_address": request.shipping_address,
+            "shipping_zipcode": request.shipping_zipcode,
+            "shipping_notes": request.shipping_notes,
+            "status": "pending"
+        }
+        
+        # 创建订单
+        logger.info(f"创建订单记录: {order_id}")
+        order = await db_service.create_product_order(order_data)
+        logger.info(f"订单创建成功: {order_id}")
+        
+        # 扣除Token
+        logger.info(f"开始扣除用户 {current_user_id} 的 {request.token_cost} 个Token")
+        token_consumed = await db_service.consume_user_tokens(
+            current_user_id, 
+            request.token_cost, 
+            f"制作{request.product_name}订单: {order_id}"
+        )
+        
+        if not token_consumed:
+            logger.error(f"扣除Token失败，订单 {order_id} 标记为失败")
+            # 如果扣除Token失败，需要删除订单或标记为失败
+            await db_service.update_product_order(order_id, {"status": "failed"})
+            raise HTTPException(status_code=500, detail="扣除Token失败")
+        
+        logger.info(f"Token扣除成功，更新订单 {order_id} 状态为已支付")
+        
+        # 更新订单状态为已支付（因为已扣除Token）
+        await db_service.update_product_order(order_id, {
+            "status": "paid",
+            "paid_at": datetime.now().isoformat()
+        })
+        
+        # 获取更新后的订单信息
+        updated_order = await db_service.get_product_order(order_id)
+        logger.info(f"订单 {order_id} 创建完成，状态: {updated_order.get('status')}")
+        
+        return ProductOrderResponse(**updated_order)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"创建实物产品订单失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"创建订单失败: {str(e)}")
+
+@router.get("/product/{order_id}", response_model=ProductOrderResponse)
+async def get_product_order(
+    order_id: str,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """获取实物产品订单详情"""
+    try:
+        order = await db_service.get_product_order(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="订单不存在")
+            
+        # 验证订单所属
+        if order["user_id"] != current_user_id:
+            raise HTTPException(status_code=403, detail="无权访问此订单")
+            
+        return ProductOrderResponse(**order)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取实物产品订单失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取订单失败: {str(e)}")
+
+@router.get("/product/user/history")
+async def get_product_order_history(
+    current_user_id: str = Depends(get_current_user_id),
+    skip: int = 0,
+    limit: int = 20
+):
+    """获取用户实物产品订单历史"""
+    try:
+        orders = await db_service.get_user_product_orders(
+            user_id=current_user_id,
+            skip=skip,
+            limit=limit
+        )
+        return {
+            "total": len(orders),
+            "orders": orders
+        }
+    except Exception as e:
+        logger.error(f"获取实物产品订单历史失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取订单历史失败: {str(e)}")

@@ -83,7 +83,7 @@ export function UserProfile() {
           <DropdownMenuItem asChild>
             <Link to="/profile" className="w-full cursor-pointer">
               <UserIcon className="mr-2 h-4 w-4" />
-              <span>个人资料</span>
+              <span>个人主页</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem

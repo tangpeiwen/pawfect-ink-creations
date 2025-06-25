@@ -236,4 +236,50 @@ class OrderCreateResponse(BaseModel):
     qr_img: Optional[str] = None
     
     # 支付表单（移动端）
-    payment_form: Optional[Dict] = None 
+    payment_form: Optional[Dict] = None
+
+# 实物产品订单相关Schema
+class ProductOrderCreate(BaseModel):
+    """创建实物产品订单请求"""
+    product_type: str  # 'sticker' 或 'tattoo'
+    product_name: str
+    token_cost: int
+    design_image_url: str
+    
+    # 收货信息
+    recipient_name: str
+    recipient_phone: str
+    shipping_province: str
+    shipping_city: str
+    shipping_address: str
+    shipping_zipcode: str
+    shipping_notes: Optional[str] = None
+
+class ProductOrderResponse(BaseModel):
+    """实物产品订单响应"""
+    id: str
+    user_id: str
+    product_type: str
+    product_name: str
+    token_cost: int
+    design_image_url: str
+    
+    # 收货信息
+    recipient_name: str
+    recipient_phone: str
+    shipping_province: str
+    shipping_city: str
+    shipping_address: str
+    shipping_zipcode: str
+    shipping_notes: Optional[str] = None
+    
+    # 订单状态
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    paid_at: Optional[datetime] = None
+    shipped_at: Optional[datetime] = None
+    delivered_at: Optional[datetime] = None
+    
+    tracking_number: Optional[str] = None
+    extra_data: Optional[Dict] = None 

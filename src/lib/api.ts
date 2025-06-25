@@ -453,3 +453,177 @@ export const getGenerationHistory = async (limit: number = 10, offset: number = 
     throw error;
   }
 };
+
+/**
+ * 获取用户token余额
+ * @returns {Promise<Object>} token余额信息
+ */
+export const getUserTokenBalance = async () => {
+  try {
+    console.log('=== 获取用户Token余额 ===');
+    
+    const authHeaders = await getAuthHeaders();
+    const balanceUrl = buildApiUrl('/tokens/balance');
+    
+    const response = await fetch(balanceUrl, {
+      method: 'GET',
+      headers: authHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Token余额数据:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('获取Token余额失败:', error);
+    throw error;
+  }
+};
+
+// ==================== 实物产品订单相关API ====================
+
+/**
+ * 创建实物产品订单
+ */
+export const createProductOrder = async (orderData: {
+  productType: 'sticker' | 'tattoo';
+  productName: string;
+  tokenCost: number;
+  designImageUrl: string;
+  shippingInfo: {
+    name: string;
+    phone: string;
+    province: string;
+    city: string;
+    address: string;
+    zipCode: string;
+    notes?: string;
+  };
+}) => {
+  try {
+    console.log('=== 创建实物产品订单 ===');
+    console.log('订单数据:', orderData);
+    
+    const authHeaders = await getAuthHeaders();
+    const createOrderUrl = buildApiUrl('/orders/product/create');
+    
+    const requestBody = {
+      product_type: orderData.productType,
+      product_name: orderData.productName,
+      token_cost: orderData.tokenCost,
+      design_image_url: orderData.designImageUrl,
+      recipient_name: orderData.shippingInfo.name,
+      recipient_phone: orderData.shippingInfo.phone,
+      shipping_province: orderData.shippingInfo.province,
+      shipping_city: orderData.shippingInfo.city,
+      shipping_address: orderData.shippingInfo.address,
+      shipping_zipcode: orderData.shippingInfo.zipCode,
+      shipping_notes: orderData.shippingInfo.notes || null
+    };
+    
+    console.log('请求体:', JSON.stringify(requestBody, null, 2));
+    
+    const response = await fetch(createOrderUrl, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('创建订单失败, 服务器返回:', errorText);
+      
+      if (response.status === 400) {
+        throw new Error('订单信息有误或Token余额不足');
+      } else if (response.status === 401) {
+        throw new Error('用户未登录，请重新登录');
+      } else if (response.status === 404) {
+        throw new Error('用户不存在');
+      } else {
+        throw new Error(`创建订单失败: ${errorText}`);
+      }
+    }
+
+    const data = await response.json();
+    console.log('订单创建成功:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('创建实物产品订单失败:', error);
+    throw error;
+  }
+};
+
+/**
+ * 获取实物产品订单详情
+ */
+export const getProductOrder = async (orderId: string) => {
+  try {
+    console.log('=== 获取实物产品订单详情 ===');
+    console.log('订单ID:', orderId);
+    
+    const authHeaders = await getAuthHeaders();
+    const getOrderUrl = buildApiUrl(`/orders/product/${orderId}`);
+    
+    const response = await fetch(getOrderUrl, {
+      method: 'GET',
+      headers: authHeaders
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('获取订单失败, 服务器返回:', errorText);
+      
+      if (response.status === 404) {
+        throw new Error('订单不存在');
+      } else if (response.status === 403) {
+        throw new Error('无权访问此订单');
+      } else {
+        throw new Error(`获取订单失败: ${errorText}`);
+      }
+    }
+
+    const data = await response.json();
+    console.log('订单详情:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('获取实物产品订单详情失败:', error);
+    throw error;
+  }
+};
+
+/**
+ * 获取用户实物产品订单历史
+ */
+export const getProductOrderHistory = async (skip: number = 0, limit: number = 20) => {
+  try {
+    console.log('=== 获取用户实物产品订单历史 ===');
+    
+    const authHeaders = await getAuthHeaders();
+    const historyUrl = buildApiUrl(`/orders/product/user/history?skip=${skip}&limit=${limit}`);
+    
+    const response = await fetch(historyUrl, {
+      method: 'GET',
+      headers: authHeaders
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('获取订单历史失败, 服务器返回:', errorText);
+      throw new Error(`获取订单历史失败: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('订单历史:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('获取实物产品订单历史失败:', error);
+    throw error;
+  }
+};

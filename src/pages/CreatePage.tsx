@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from 'react-router-dom';
 import { analyzePetImage } from '@/lib/openaiService';
-import { generateSticker, checkGenerationStatus, uploadImage, getGenerationHistory } from '@/lib/api';
+import { generateSticker, checkGenerationStatus, uploadImage, getGenerationHistory, getUserTokenBalance } from '@/lib/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -58,6 +58,14 @@ const CreatePage = () => {
   const [historyImages, setHistoryImages] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
   const [historyError, setHistoryError] = useState<string>("");
+  
+  // 添加选中的图片状态 - 用于统一管理当前选中的图片
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    type: 'current' | 'history';
+    index?: number;
+    historyId?: string;
+  } | null>(null);
 
   // 添加状态变化跟踪
   useEffect(() => {
@@ -369,21 +377,7 @@ const CreatePage = () => {
                 console.log('resultUrl:', statusResult.resultUrl);
                 console.log('当前resultImages:', resultImages);
                 
-                setResultImages([statusResult.resultUrl]);
-                setSelectedResultIndex(0);
-                setIsGenerating(false);
-                setGenerationProgress(100);
-                
-                console.log('结果设置完成，resultImages应该更新为:', [statusResult.resultUrl]);
-                toast.success("贴纸生成完成！");
-                
-                // 生成完成后跳转到结果页面
-                setActiveStep("result");
-                
-                // 刷新历史记录，显示新生成的图片
-                setTimeout(() => {
-                  fetchHistory();
-                }, 1000); // 延迟1秒刷新，确保后端数据已保存
+                handleGenerationComplete(statusResult.resultUrl);
               } else if (statusResult.status === 'failed') {
                 setGenerationProgress(0);
                 
@@ -420,16 +414,7 @@ const CreatePage = () => {
         setStatusCheckInterval(intervalId);
       } else if (result.images && result.images.length > 0) {
         // 如果直接返回了图片，则设置结果
-        setResultImages(result.images);
-        setSelectedResultIndex(0);
-        setGenerationProgress(100);
-        setGenerationStatus("生成完成");
-        setIsGenerating(false);
-        
-        // 生成完成后跳转到结果页面
-        setActiveStep("result");
-        
-        toast.success("贴纸生成完成！");
+        handleGenerationComplete(result.images[0]);
       } else {
         throw new Error('生成结果格式错误');
       }
@@ -446,14 +431,55 @@ const CreatePage = () => {
     handleGenerate();
   };
   
-  const handleConfirm = () => {
-    toast.success("已确认设计！正在前往订单页面...");
-    // 这里可以跳转到实际的订单页面
-    navigate("/pricing");
+  const handleConfirm = async () => {
+    if (!selectedImage) {
+      toast.error("请先选择一张图片");
+      return;
+    }
+    
+    try {
+      // 获取用户token余额
+      const tokenData = await getUserTokenBalance();
+      const userTokens = tokenData.tokens_remaining || 0;
+      
+      // 如果余额不足1000，提醒用户充值
+      if (userTokens < 1000) {
+        // 先显示余额不足的提醒
+        toast.error(`您的余额不足，无法制作纹身贴。当前余额: ${userTokens} Token，制作纹身贴需要: 1000 Token`, {
+          duration: 5000
+        });
+        
+        // 显示确认对话框询问是否跳转充值
+        setTokenErrorMessage(`当前余额: ${userTokens} Token`);
+        setShowTokenDialog(true);
+        return;
+      }
+      
+      // 余额充足，跳转到产品选择页面
+      navigate("/product-selection", {
+        state: {
+          selectedImage: selectedImage.url
+        }
+      });
+      
+    } catch (error) {
+      console.error('获取token余额失败:', error);
+      toast.error('获取余额失败，请刷新页面重试');
+    }
   };
 
-  // 当前选中的结果图片
-  const currentResultImage = resultImages[selectedResultIndex] || null;
+  // 处理图片选择
+  const handleImageSelect = (url: string, type: 'current' | 'history', index?: number, historyId?: string) => {
+    setSelectedImage({
+      url,
+      type,
+      index,
+      historyId
+    });
+  };
+
+  // 当前选中的结果图片 - 修改为使用selectedImage
+  const currentResultImage = selectedImage?.url || (resultImages[selectedResultIndex] || null);
 
   // 处理平滑过渡到风格选择页面
   const handleProceedToStyle = async () => {
@@ -500,6 +526,34 @@ const CreatePage = () => {
     }, 100);
   };
   
+  // 修改生成完成后的处理逻辑
+  const handleGenerationComplete = (resultUrl: string) => {
+    console.log('=== 设置生成结果 ===');
+    console.log('resultUrl:', resultUrl);
+    
+    setResultImages([resultUrl]);
+    setSelectedResultIndex(0);
+    // 自动选中新生成的结果
+    setSelectedImage({
+      url: resultUrl,
+      type: 'current',
+      index: 0
+    });
+    setIsGenerating(false);
+    setGenerationProgress(100);
+    
+    console.log('结果设置完成，resultImages应该更新为:', [resultUrl]);
+    toast.success("贴纸生成完成！");
+    
+    // 生成完成后跳转到结果页面
+    setActiveStep("result");
+    
+    // 刷新历史记录，显示新生成的图片
+    setTimeout(() => {
+      fetchHistory();
+    }, 1000); // 延迟1秒刷新，确保后端数据已保存
+  };
+
   return (
     <Layout>
       <div className="container py-12">
@@ -517,17 +571,30 @@ const CreatePage = () => {
           <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-xl text-center">Token不足</DialogTitle>
+                <DialogTitle className="text-xl text-center">余额不足</DialogTitle>
                 <DialogDescription className="text-center pt-4">
-                  {tokenErrorMessage}
+                  <div className="space-y-2">
+                    <p>您的余额不足，无法制作纹身贴。</p>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm">
+                        <span className="text-gray-600">当前余额:</span> 
+                        <span className="font-semibold text-red-500 ml-1">{tokenErrorMessage.match(/当前余额: (\d+)/)?.[1] || '0'} Token</span>
+                      </p>
+                      <p className="text-sm mt-1">
+                        <span className="text-gray-600">制作纹身贴需要:</span> 
+                        <span className="font-semibold text-blue-500 ml-1">1000 Token</span>
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-600">是否前往充值页面购买Token？</p>
+                  </div>
                 </DialogDescription>
               </DialogHeader>
               <div className="flex justify-center my-4">
                 <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
                   </svg>
                 </div>
               </div>
@@ -780,24 +847,33 @@ const CreatePage = () => {
                 onConfirm={handleConfirm}
               />
               
-              {/* 生成的多个结果展示 */}
-              {resultImages.length > 0 && (
+              {/* 当前生成结果展示 - 只在有结果且结果数量大于1时显示 */}
+              {resultImages.length > 1 && (
                 <div className="mt-8">
-                  <h3 className="text-lg font-display font-medium mb-4">其他生成结果</h3>
+                  <h3 className="text-lg font-display font-medium mb-4">本次生成的其他结果</h3>
                   <div className="grid grid-cols-3 gap-4">
                     {resultImages.map((image, index) => (
                       <div 
-                        key={index}
-                        className={`cursor-pointer border-2 rounded-lg overflow-hidden ${
-                          selectedResultIndex === index ? 'border-pet-pink' : 'border-transparent'
+                        key={`current-${index}`}
+                        className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all duration-200 ${
+                          selectedImage?.type === 'current' && selectedImage?.index === index 
+                            ? 'border-pet-pink shadow-lg' 
+                            : 'border-gray-200 hover:border-pet-pink/50'
                         }`}
-                        onClick={() => setSelectedResultIndex(index)}
+                        onClick={() => handleImageSelect(image, 'current', index)}
                       >
                         <img 
                           src={image} 
                           alt={`生成结果 ${index + 1}`} 
                           className="w-full aspect-square object-cover"
                         />
+                        {selectedImage?.type === 'current' && selectedImage?.index === index && (
+                          <div className="absolute top-2 right-2 bg-pet-pink text-white rounded-full p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -834,84 +910,57 @@ const CreatePage = () => {
                       {historyImages.map((historyItem, index) => (
                         <div 
                           key={historyItem.id}
-                          className="group cursor-pointer border-2 border-transparent hover:border-pet-pink/50 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg"
-                          onClick={() => {
-                            // 点击历史图片时，将其设置为当前结果
-                            setResultImages([historyItem.resultUrl]);
-                            setSelectedResultIndex(0);
-                            toast.success("已选择历史作品");
-                          }}
+                          className={`group cursor-pointer border-2 rounded-lg overflow-hidden transition-all duration-200 relative ${
+                            selectedImage?.type === 'history' && selectedImage?.historyId === historyItem.id
+                              ? 'border-pet-pink shadow-lg'
+                              : 'border-gray-200 hover:border-pet-pink/50 hover:shadow-md'
+                          }`}
+                          onClick={() => handleImageSelect(historyItem.resultUrl, 'history', undefined, historyItem.id)}
                         >
-                          <div className="relative">
-                            <img 
-                              src={historyItem.resultUrl} 
-                              alt={historyItem.title}
-                              className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200"></div>
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <p className="text-white text-xs truncate">{historyItem.title}</p>
-                              <p className="text-white/80 text-xs">
-                                {new Date(historyItem.createdAt).toLocaleDateString('zh-CN')}
-                              </p>
+                          <img 
+                            src={historyItem.resultUrl} 
+                            alt={historyItem.title} 
+                            className="w-full aspect-square object-cover"
+                          />
+                          {selectedImage?.type === 'history' && selectedImage?.historyId === historyItem.id && (
+                            <div className="absolute top-2 right-2 bg-pet-pink text-white rounded-full p-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
                             </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2">
+                            <p className="text-white text-xs truncate">{historyItem.title}</p>
+                            <p className="text-white/70 text-xs">
+                              {new Date(historyItem.createdAt).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                   
-                  <div className="mt-4 text-center">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={fetchHistory}
-                      disabled={isLoadingHistory}
-                    >
-                      {isLoadingHistory ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          刷新中...
-                        </>
-                      ) : (
-                        <>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                            <path d="M21 3v5h-5"></path>
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                            <path d="M3 21v-5h5"></path>
-                          </svg>
-                          刷新历史记录
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  {/* 选择提示 */}
+                  {(resultImages.length > 0 || historyImages.length > 0) && (
+                    <div className="mt-6 p-4 bg-pet-yellow/10 border border-pet-yellow/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pet-orange">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 16v-4"></path>
+                          <path d="M12 8h.01"></path>
+                        </svg>
+                        <span className="text-sm font-medium text-pet-orange">选择提示</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {selectedImage 
+                          ? `已选中${selectedImage.type === 'current' ? '本次生成' : '历史作品'}中的图片，点击"确认使用"继续` 
+                          : '请点击选择一张图片，然后点击"确认使用"按钮继续'
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
-              
-              <div className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setActiveStep("style")}
-                  className="border-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                  返回上一步
-                </Button>
-                
-                {currentResultImage && (
-                  <Button 
-                    className="pet-button"
-                    onClick={handleConfirm}
-                  >
-                    前往制作
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
-                  </Button>
-                )}
-              </div>
             </TabsContent>
           </Tabs>
         </div>

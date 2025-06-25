@@ -7,6 +7,10 @@ import CreatePage from './pages/CreatePage';
 import MyWorksPage from './pages/MyWorksPage';
 // import AboutPage from './pages/AboutPage';
 import PricingPage from './pages/PricingPage';
+import ProductSelectionPage from './pages/ProductSelectionPage';
+import OrderConfirmPage from './pages/OrderConfirmPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import ProfilePage from './pages/ProfilePage';
 import NotFound from './pages/NotFound';
 import AuthPage from './pages/AuthPage';
 import RegisterPage from './pages/RegisterPage';
@@ -42,6 +46,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyWorksPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/product-selection" 
+            element={
+              <ProtectedRoute>
+                <ProductSelectionPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/order-confirm" 
+            element={
+              <ProtectedRoute>
+                <OrderConfirmPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/order-success" 
+            element={
+              <ProtectedRoute>
+                <OrderSuccessPage />
               </ProtectedRoute>
             } 
           />
