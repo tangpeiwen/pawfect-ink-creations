@@ -303,14 +303,14 @@ const PricingPage = () => {
                 </ul>
 
                 <Button 
-                  className={`w-full py-3 ${
+                  className={`w-full py-3 font-medium text-base transition-all duration-200 ${
                     pkg.buttonVariant === 'primary' 
-                      ? 'pet-button' 
-                      : 'border-2 border-pet-pink text-pet-pink hover:bg-pet-pink hover:text-white'
+                      ? 'bg-pet-pink text-white hover:bg-pet-pink/90 border-2 border-pet-pink' 
+                      : 'bg-white border-2 border-pet-pink text-pet-pink hover:bg-pet-pink hover:text-white'
                   }`}
                   onClick={() => handlePurchase(pkg.id)}
                 >
-                  立即购买
+                  {pkg.buttonText}
                 </Button>
               </div>
             </div>
