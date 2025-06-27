@@ -5,15 +5,16 @@ const Footer = () => {
   return (
     <footer className="bg-gray-50 pt-12 pb-6">
       <div className="container px-8 md:px-12 lg:px-16 mx-auto max-w-6xl">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          <div className="md:col-span-2">
             <Link to="/" className="flex items-center space-x-2">
               <img src="/images/Cat.svg" alt="猫咪" className="w-10 h-10" />
               <img src="/images/Pawfect.svg" alt="Me & Paw" className="h-7" />
             </Link>
             <p className="mt-4 text-gray-500 text-sm">
-              让您的宠物变成可爱的纹身贴，<br />
-              伴您左右，是我们的使命。
+              {/* 让您的宠物变成可爱的纹身贴，<br />
+              伴您左右，是我们的使命。 */}
+              让每一个宠物，都能陪你更久一点。
             </p>
             <div className="flex space-x-4 mt-6">
               <a href="#" className="bg-pet-pink/10 hover:bg-pet-pink/20 w-8 h-8 rounded-full flex items-center justify-center text-pet-pink transition-colors">
@@ -43,6 +44,14 @@ const Footer = () => {
               <a href="#" className="text-gray-500 hover:text-pet-pink transition-colors">常见问题</a>
               <a href="#" className="text-gray-500 hover:text-pet-pink transition-colors">退款政策</a>
               <a href="#" className="text-gray-500 hover:text-pet-pink transition-colors">使用指南</a>
+            </nav>
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-lg mb-4">法律条款</h3>
+            <nav className="flex flex-col space-y-2">
+              <a href="#" className="text-gray-500 hover:text-pet-pink transition-colors">隐私政策</a>
+              <a href="#" className="text-gray-500 hover:text-pet-pink transition-colors">服务条款</a>
+              <a href="#" className="text-gray-500 hover:text-pet-pink transition-colors">用户协议</a>
             </nav>
           </div>
           <div>
