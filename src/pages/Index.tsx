@@ -181,7 +181,7 @@ const Features = () => {
               简单三步，<span className="text-pet-pink">宠物也能做主角！</span>
             </h2>
             <p className="text-lg md:text-xl text-gray-800 max-w-3xl mx-auto">
-              我们强大的AI服务能够将您上传的宠物照片转换为精美的贴纸设计，操作简单，过程有趣
+            一张照片，一点魔法🧚‍♀️，你的宠物就能变身专属贴纸！
             </p>
           </div>
 
