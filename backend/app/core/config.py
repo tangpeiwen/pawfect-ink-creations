@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     STYLE_REFERENCES_DIR: Path = STORAGE_DIR / "styles"
     
     # 文件上传设置
-    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1280  # 10MB - 支持iPhone ProRAW格式
+    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB - 支持iPhone ProRAW格式
     ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/heic"]
     
     # OpenAI API设置

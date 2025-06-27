@@ -118,7 +118,7 @@ def validate_file_size(file_size: int) -> bool:
     if file_size > max_size:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"文件太大，最大允许 {max_size // (1024*1280)} MB"
+            detail=f"文件太大，最大允许 {max_size // (1024*1024)} MB"
         )
     return True
 

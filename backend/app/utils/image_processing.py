@@ -9,8 +9,8 @@ from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
-# 适合图像生成的尺寸 - 保持宽度，增加高度以适应猫咪身体比例
-TARGET_SIZE = (1024, 1280)  # 宽度保持1024，高度增加到1280
+# 适合图像生成的尺寸
+TARGET_SIZE = (1024, 1024)
 
 async def validate_image(image: UploadFile) -> Tuple[bool, int]:
     """

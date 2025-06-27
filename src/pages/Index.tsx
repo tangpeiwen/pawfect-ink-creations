@@ -75,15 +75,11 @@ const Hero = () => (
               className="absolute right-[80px] top-[180px] w-[70px] z-40"
             /> */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 text-black">
-              🐾 和你的宠物，一起贴在心上
+              和你的宠物永远在一起
             </h1>
             <p className="text-lg md:text-xl text-gray-700 mb-10">
-              上传照片，选择风格，一键生成专属宠物贴纸和纹身贴。<br />
-              用另一种方式，把“它”带在身边。
+              上传照片，选择风格，我们把宠物画成线条贴纸，做成你独一无二的纹身。
             </p>
-            {/* <p className="text-lg md:text-xl text-gray-700 mb-10">
-              用另一种方式，把"它"带在身边。
-            </p> */}
             <img
               src="/images/bikini_cat.svg"
               className="absolute -left-36 -top-[100px] w-36 z-50 animate-slide-down"
@@ -178,7 +174,7 @@ const Features = () => {
           /> */}
           <div className="p-8 md:p-12 text-center relative">
             <h2 className="text-4xl font-display font-bold mb-6 relative z-10">
-              简单三步，<span className="text-pet-pink">宠物也能做主角！</span>
+              简单三步，制作属于你的<span className="text-pet-pink">宠物贴纸</span>
             </h2>
             <p className="text-lg md:text-xl text-gray-800 max-w-3xl mx-auto">
               我们强大的AI服务能够将您上传的宠物照片转换为精美的贴纸设计，操作简单，过程有趣
@@ -199,25 +195,25 @@ const Features = () => {
           <StepCard
             icon={Cat}
             title="上传照片"
-            description="拍一张毛孩子的萌照，支持多角度，我们会捕捉它最可爱的瞬间！"
+            description="上传宠物的照片，支持多角度，让我们捕捉你爱宠的神韵"
           />
 
           <StepCard
             icon={PawPrint}
             title="选择风格"
-            description="想要简约线稿？还是俏皮涂鸦？多种艺术风格任你选，打造只属于你们的贴纸风格。"
+            description="多种艺术风格可选，打造你独一无二的贴纸设计"
           />
 
           <StepCard
             icon={Heart}
-            title="AI生成魔法"
-            description="AI将照片转化为卡通贴纸，不用会画画，也能拥有专属的宠物形象！"
+            title="AI生成"
+            description="先进的AI技术将您的宠物照片转化为栩栩如生的卡通形象"
           />
 
           <StepCard
             icon={Package}
             title="一站到家"
-            description="生成的设计图可一键下单制作贴纸或纹身贴，几天后，它就会出现在你生活的每个角落。"
+            description="设计完成后可直接订购纹身贴或贴纸，快递直达你家"
           />
         </div>
 

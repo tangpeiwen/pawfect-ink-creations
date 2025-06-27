@@ -72,7 +72,7 @@ async def upload_image(
                 logger.warning(f"文件大小超出限制: {content_size} > {max_size}")
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"文件大小超出限制，最大允许{max_size // (1024 * 1280)}MB，实际大小: {content_size / 1024 / 1280:.2f}MB"
+                    detail=f"文件大小超出限制，最大允许{max_size // (1024 * 1024)}MB，实际大小: {content_size / 1024 / 1024:.2f}MB"
                 )
             
             logger.info(f"读取图片内容成功，实际大小: {content_size} 字节")
@@ -350,7 +350,7 @@ def preprocess_image(content: bytes) -> bytes:
                 raise ValueError("图片转换后尺寸为0")
             
             # 调整大小（如果太大的话）
-            max_size = (1024, 1280)
+            max_size = (1024, 1024)
             original_size = img.size
             
             if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
