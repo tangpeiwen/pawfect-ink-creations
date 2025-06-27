@@ -306,7 +306,7 @@ const CreatePage = () => {
         console.log('开始轮询生成状态，generationId:', generationId);
         
         let pollCount = 0;
-        const maxPollCount = 180; 
+        const maxPollCount = 240; 
         
         // 开始轮询生成状态 - 使用更高效的策略
         const intervalId = setInterval(async () => {
