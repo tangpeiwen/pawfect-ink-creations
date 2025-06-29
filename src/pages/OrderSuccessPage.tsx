@@ -36,7 +36,6 @@ const OrderSuccessPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [orderData, setOrderData] = useState<OrderSuccessData | null>(null);
-  const [countdown, setCountdown] = useState(10);
 
   useEffect(() => {
     if (location.state?.orderId && location.state?.orderData && location.state?.shippingInfo) {
@@ -48,22 +47,7 @@ const OrderSuccessPage = () => {
     } else {
       toast.error("订单信息不存在");
       navigate('/create');
-      return;
     }
-
-    // 倒计时自动跳转
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          navigate('/my-works');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
   }, [location.state, navigate]);
 
   const handleViewMyWorks = () => {
@@ -129,7 +113,41 @@ const OrderSuccessPage = () => {
               <div>
                 <h3 className="font-medium mb-3">产品信息</h3>
                 <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="text-3xl">{orderData.orderData.productInfo.icon}</div>
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={orderData.orderData.productInfo.icon} 
+                      alt={orderData.orderData.productInfo.name} 
+                      className="w-16 h-16 object-contain border rounded-lg"
+                      onError={(e) => {
+                        // 如果图片加载失败，显示默认图标
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const fallbackDiv = target.nextElementSibling as HTMLElement;
+                        if (fallbackDiv) {
+                          fallbackDiv.style.display = 'flex';
+                        }
+                      }}
+                    />
+                    {/* 备用图标 */}
+                    <div 
+                      className="w-16 h-16 bg-gray-100 border rounded-lg flex items-center justify-center" 
+                      style={{ display: 'none' }}
+                    >
+                      {orderData.orderData.productType === 'sticker' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                          <path d="M8 12h8"/>
+                          <path d="M12 8v8"/>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg">{orderData.orderData.productInfo.name}</h4>
                     <p className="text-gray-600 text-sm mb-2">{orderData.orderData.productInfo.description}</p>
@@ -265,13 +283,6 @@ const OrderSuccessPage = () => {
               </svg>
               创建新作品
             </Button>
-          </div>
-
-          {/* 自动跳转提示 */}
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-500">
-              {countdown > 0 ? `${countdown}秒后自动跳转到我的作品页面` : '正在跳转...'}
-            </p>
           </div>
         </div>
       </div>

@@ -81,20 +81,30 @@ const CreatePage = () => {
       setIsLoadingHistory(true);
       setHistoryError("");
       
-      const historyData = await getGenerationHistory(10, 0); // 获取最近10条记录
+      const historyData = await getGenerationHistory(15, 0); // 获取最近10条记录
       
       if (historyData.success && historyData.history) {
-        // 过滤出已完成且有结果URL的记录
+        console.log('API返回的总记录数:', historyData.history.length);
+        
+        // 先过滤出已完成且有结果URL的记录，然后取前10张
         const completedHistory = historyData.history
           .filter((item: any) => item.status === 'completed')
+          .filter((item: any) => item.result_url) // 确保有结果URL
+          .slice(0, 8) // 取前10张
           .map((item: any) => ({
             id: item.id,
             resultUrl: item.result_url,
             createdAt: item.created_at,
             styleId: item.style_id,
             title: item.title || '未命名作品'
-          }))
-          .filter((item: any) => item.resultUrl); // 确保有结果URL
+          }));
+        
+        console.log('状态统计:', {
+          total: historyData.history.length,
+          completed: historyData.history.filter((item: any) => item.status === 'completed').length,
+          completedWithUrl: historyData.history.filter((item: any) => item.status === 'completed' && item.result_url).length,
+          finalDisplay: completedHistory.length
+        });
         
         setHistoryImages(completedHistory);
         console.log('获取到历史记录:', completedHistory.length, '条');
@@ -478,9 +488,6 @@ const CreatePage = () => {
     });
   };
 
-  // 当前选中的结果图片 - 修改为使用selectedImage
-  const currentResultImage = selectedImage?.url || (resultImages[selectedResultIndex] || null);
-
   // 处理平滑过渡到风格选择页面
   const handleProceedToStyle = async () => {
     if (!uploadedImage || !imageId) {
@@ -548,10 +555,13 @@ const CreatePage = () => {
     // 生成完成后跳转到结果页面
     setActiveStep("result");
     
-    // 刷新历史记录，显示新生成的图片
-    setTimeout(() => {
-      fetchHistory();
-    }, 1000); // 延迟1秒刷新，确保后端数据已保存
+    // 只在用户当前在结果页面且历史记录为空时才刷新历史记录
+    // 避免频繁刷新影响用户体验
+    if (historyImages.length === 0) {
+      setTimeout(() => {
+        fetchHistory();
+      }, 2000); // 延迟2秒刷新，确保后端数据已保存
+    }
   };
 
   return (
@@ -840,24 +850,86 @@ const CreatePage = () => {
             </TabsContent>
             
             <TabsContent value="result" className="space-y-8">
+              {/* 如果有生成结果或历史记录，显示选择引导 */}
+              {(resultImages.length > 0 || historyImages.length > 0) && (
+                <div className="bg-gradient-to-r from-pet-pink/10 to-pet-purple/10 border border-pet-pink/20 rounded-xl p-6 mb-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-pet-pink/20 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pet-pink">
+                          <path d="M9 12l2 2 4-4"/>
+                          <path d="M21 12c.552 0 1-.448 1-1V8c0-.552-.448-1-1-1s-1 .448-1 1v3c0 .552.448 1 1 1z"/>
+                          <path d="M3 12c-.552 0-1-.448-1-1V8c0-.552.448-1 1-1s1 .448 1 1v3c0-.552-.448-1-1-1z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-display font-semibold text-gray-800 mb-2">
+                        选择您要使用的图片
+                      </h3>
+                      <div className="space-y-2">
+                        {selectedImage ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <p className="text-sm text-gray-700">
+                              已选中{selectedImage.type === 'current' ? '本次生成' : '历史作品'}中的图片，
+                              <span className="font-medium text-pet-pink">上方大图</span>已更新显示
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                            <p className="text-sm text-gray-700">
+                              请点击下方任意一张图片，选中后会在
+                              <span className="font-medium text-pet-pink">上方大图区域</span>显示
+                            </p>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          💡 您可以选择刚生成的图片，也可以选择之前的历史作品
+                        </p>
+                      </div>
+                      {selectedImage && (
+                        <div className="mt-4">
+                          <Button 
+                            className="pet-button"
+                            onClick={handleConfirm}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            确认使用此图片
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <GeneratorResult 
                 loading={isGenerating}
-                resultImage={currentResultImage}
+                resultImage={selectedImage?.url || (resultImages.length > 0 ? resultImages[selectedResultIndex] : null)}
                 onRegenerate={handleRegenerate}
                 onConfirm={handleConfirm}
+                selectedImage={selectedImage}
               />
               
-              {/* 当前生成结果展示 - 只在有结果且结果数量大于1时显示 */}
-              {resultImages.length > 1 && (
+              {/* 当前生成结果展示 - 修改为始终显示当前生成的结果 */}
+              {resultImages.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-lg font-display font-medium mb-4">本次生成的其他结果</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <h3 className="text-lg font-display font-medium mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pet-pink">
+                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    本次生成结果
+                    <span className="text-sm text-gray-500 font-normal">({resultImages.length})</span>
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {resultImages.map((image, index) => (
                       <div 
                         key={`current-${index}`}
-                        className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all duration-200 ${
+                        className={`relative cursor-pointer border-2 rounded-lg overflow-hidden transition-all duration-200 ${
                           selectedImage?.type === 'current' && selectedImage?.index === index 
-                            ? 'border-pet-pink shadow-lg' 
+                            ? 'border-pet-pink shadow-lg ring-2 ring-pet-pink/30' 
                             : 'border-gray-200 hover:border-pet-pink/50'
                         }`}
                         onClick={() => handleImageSelect(image, 'current', index)}
@@ -872,6 +944,17 @@ const CreatePage = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                          <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-700">
+                            点击选择
+                          </div>
+                        </div>
+                        {/* 标识这是最新生成的 */}
+                        {index === 0 && (
+                          <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                            最新
                           </div>
                         )}
                       </div>
@@ -912,7 +995,7 @@ const CreatePage = () => {
                           key={historyItem.id}
                           className={`group cursor-pointer border-2 rounded-lg overflow-hidden transition-all duration-200 relative ${
                             selectedImage?.type === 'history' && selectedImage?.historyId === historyItem.id
-                              ? 'border-pet-pink shadow-lg'
+                              ? 'border-pet-pink shadow-lg ring-2 ring-pet-pink/30'
                               : 'border-gray-200 hover:border-pet-pink/50 hover:shadow-md'
                           }`}
                           onClick={() => handleImageSelect(historyItem.resultUrl, 'history', undefined, historyItem.id)}
@@ -935,30 +1018,36 @@ const CreatePage = () => {
                               {new Date(historyItem.createdAt).toLocaleDateString()}
                             </p>
                           </div>
+                          <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                            <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-700">
+                              点击选择
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
-                  
-                  {/* 选择提示 */}
-                  {(resultImages.length > 0 || historyImages.length > 0) && (
-                    <div className="mt-6 p-4 bg-pet-yellow/10 border border-pet-yellow/30 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pet-orange">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <path d="M12 16v-4"></path>
-                          <path d="M12 8h.01"></path>
-                        </svg>
-                        <span className="text-sm font-medium text-pet-orange">选择提示</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {selectedImage 
-                          ? `已选中${selectedImage.type === 'current' ? '本次生成' : '历史作品'}中的图片，点击"确认使用"继续` 
-                          : '请点击选择一张图片，然后点击"确认使用"按钮继续'
-                        }
-                      </p>
-                    </div>
-                  )}
+                </div>
+              )}
+
+              {/* 如果没有任何图片可选择，显示引导 */}
+              {resultImages.length === 0 && historyImages.length === 0 && !isGenerating && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">暂无可选择的图片</h3>
+                  <p className="text-sm text-gray-500 mb-4">请先生成宠物贴纸，或查看您的历史作品</p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setActiveStep("style")}
+                  >
+                    返回生成页面
+                  </Button>
                 </div>
               )}
             </TabsContent>

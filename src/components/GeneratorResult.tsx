@@ -8,9 +8,10 @@ interface GeneratorResultProps {
   resultImage: string | null;
   onRegenerate: () => void;
   onConfirm: () => void;
+  selectedImage?: any;
 }
 
-const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: GeneratorResultProps) => {
+const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm, selectedImage }: GeneratorResultProps) => {
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
 
@@ -28,7 +29,19 @@ const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: Gene
 
   return (
     <div className="w-full">
-      <h3 className="text-xl font-display font-bold mb-4">生成结果</h3>
+      <div className="mb-4">
+        {selectedImage ? (
+          <div>
+            <h3 className="text-xl font-display font-bold">您选择的图片</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {selectedImage.type === 'current' ? '本次生成的结果' : '历史作品'} - 
+              点击下方"确认使用"按钮制作产品
+            </p>
+          </div>
+        ) : (
+          <h3 className="text-xl font-display font-bold">生成结果</h3>
+        )}
+      </div>
       
       <Card className="overflow-hidden">
         <CardContent className="p-0">
@@ -111,13 +124,15 @@ const GeneratorResult = ({ loading, resultImage, onRegenerate, onConfirm }: Gene
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
                   重新生成
                 </Button>
-                <Button 
-                  className="pet-button"
-                  onClick={onConfirm}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  确认使用
-                </Button>
+                {!selectedImage || (selectedImage && selectedImage.url === resultImage) ? (
+                  <Button 
+                    className="pet-button"
+                    onClick={onConfirm}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    确认使用
+                  </Button>
+                ) : null}
               </div>
             </div>
           ) : (
