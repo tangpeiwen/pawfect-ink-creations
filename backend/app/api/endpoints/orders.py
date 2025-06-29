@@ -50,7 +50,7 @@ async def create_order(
         client_ip = client_request.client.host if client_request.client else "127.0.0.1"
         
         # 金额处理：确保金额单位一致，以元为单位发送给支付接口
-        payment_amount = package["price_rmb"]/100  # 分转为元
+        payment_amount = package["price_rmb"] # 分转为元
         
         payment_result = await zpay_service.create_api_order(
             order_id=order_id,

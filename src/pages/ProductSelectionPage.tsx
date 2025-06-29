@@ -180,12 +180,40 @@ const ProductSelectionPage = () => {
                 
                 <CardContent className="p-6">
                   <div className="text-center mb-4">
-                    <div className="mb-2">
+                    <div className="mb-2 relative">
                       <img 
                         src={option.icon} 
                         alt={option.name} 
                         className="w-16 h-16 mx-auto object-contain"
+                        onError={(e) => {
+                          // 如果图片加载失败，显示默认图标
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallbackDiv = target.nextElementSibling as HTMLElement;
+                          if (fallbackDiv) {
+                            fallbackDiv.style.display = 'flex';
+                          }
+                        }}
                       />
+                      {/* 备用图标 */}
+                      <div 
+                        className="w-16 h-16 bg-gray-100 border rounded-lg flex items-center justify-center mx-auto" 
+                        style={{ display: 'none' }}
+                      >
+                        {option.id === 'sticker' ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                            <path d="M8 12h8"/>
+                            <path d="M12 8v8"/>
+                          </svg>
+                        )}
+                      </div>
                     </div>
                     <h3 className="text-xl font-display font-bold mb-2">{option.name}</h3>
                     <p className="text-gray-600 text-sm mb-3">{option.description}</p>
